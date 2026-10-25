@@ -83,7 +83,7 @@ export interface DataSource {
     classification: Classification;
 }
 
-export type Zone {
+export type Zone = {
     id: string;
     name: string;
     ring: [number, number][];
