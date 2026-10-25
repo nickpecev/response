@@ -20,6 +20,9 @@ const DARK = "https://tiles.openfreemap.org/styles/dark";
 const white: [number, number, number, number] = [242, 242, 242, 230];
 const faint: [number, number, number, number] = [242, 242, 242, 28];
 const line: [number, number, number, number] = [242, 242, 242, 120];
+const down: [number, number, number, number] = [214, 64, 64, 240];
+const closedOutline: [number, number, number, number] = [168, 168, 168, 210];
+const closedLine: [number, number, number, number] = [196, 72, 72, 230];
 
 const SURGE: [number, number, number, number][] = [
     [246, 214, 96, 120],
@@ -134,7 +137,7 @@ function layersIn(bundle: IncidentBundle) {
     if (bundle.storm?.points.length) present.add("storm");
     if (bundle.observations.some((observation) => observation.location)) present.add("observations");
     if (bundle.assets.length) present.add("assets");
-    if (bundle.disruptions.some((disruption) => disruption.path.length > 1)) present.add("disruptions");
+    if (roadClosures(bundle).some((disruption) => disruption.path.length > 1)) present.add("disruptions");
     if (bundle.surgeZones) present.add("surge");
     if (bundle.evacZones || bundle.evacRoutes) present.add("evacuation");
     if (bundle.hazardArea) present.add("county");
@@ -145,12 +148,27 @@ function layersIn(bundle: IncidentBundle) {
     return LAYER_LABELS.filter((layer) => present.has(layer.id));
 }
 
+function roadClosures(bundle: IncidentBundle): InfrastructureDisruption[] {
+    const modeled = bundle.exercise?.disruptions ?? [];
+    if (modeled.some((disruption) => disruption.path.length > 1)) return modeled;
+    return bundle.disruptions;
+}
+
 function initialTime(bundle: IncidentBundle) {
     const start = Date.parse(bundle.manifest.timeRange.start);
     const marked = (bundle.manifest as { defaultTime?: string }).defaultTime;
     if (!marked) return start;
     const time = Date.parse(marked);
     return Number.isFinite(time) ? time : start;
+}
+
+function assetDown(asset: InfrastructureAsset, time: number) {
+    const notes = asset.historicalActivation ?? [];
+    return notes.some((item) => Date.parse(item.t) <= time && /flood|impassable|closed|destroy|outage|unusable|collapse|down/i.test(item.status));
+}
+
+function siteDown(site: ExerciseInputs["staging"][number], time: number) {
+    return Boolean(site.unsuitableFrom && time >= Date.parse(site.unsuitableFrom));
 }
 
 function observationReady(observation: Observation, time: number) {
@@ -294,21 +312,37 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
         );
     }
 
-    const disruptions = bundle.disruptions.filter((disruption) => {
+    const disruptions = roadClosures(bundle).filter((disruption) => {
         if (disruption.path.length < 2) return false;
         const opened = Date.parse(disruption.start);
         const closed = disruption.end ? Date.parse(disruption.end) : Infinity;
         return time >= opened && time < closed;
     });
     if (visible.disruptions && disruptions.length) {
+        const pathParameters = { depthCompare: "always" as const, depthWriteEnabled: false };
         layers.push(
             new PathLayer({
                 id: "disruptions",
                 data: disruptions,
                 getPath: (disruption: InfrastructureDisruption) => disruption.path,
-                getColor: white,
-                widthMinPixels: 3,
+                getColor: closedOutline,
+                widthMinPixels: 6,
                 capRounded: true,
+                jointRounded: true,
+                parameters: pathParameters,
+                pickable: true,
+            }),
+        );
+        layers.push(
+            new PathLayer({
+                id: "disruptions-line",
+                data: disruptions,
+                getPath: (disruption: InfrastructureDisruption) => disruption.path,
+                getColor: closedLine,
+                widthMinPixels: 3.5,
+                capRounded: true,
+                jointRounded: true,
+                parameters: pathParameters,
                 pickable: true,
             }),
         );
@@ -412,8 +446,11 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
                 id: "assets",
                 data: bundle.assets,
                 getPosition: (asset: InfrastructureAsset) => [asset.location.lon, asset.location.lat],
-                getFillColor: [242, 242, 242, 160],
-                getRadius: 2.5,
+                getFillColor: (asset: InfrastructureAsset) => (assetDown(asset, time) ? down : [242, 242, 242, 160]),
+                getLineColor: [0, 0, 0, 255],
+                stroked: true,
+                lineWidthMinPixels: 1,
+                getRadius: (asset: InfrastructureAsset) => (assetDown(asset, time) ? 5 : 2.5),
                 radiusUnits: "pixels",
                 pickable: true,
             }),
@@ -426,8 +463,8 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
                 id: "staging",
                 data: exercise.staging,
                 getPosition: (site: ExerciseInputs["staging"][number]) => [site.location.lon, site.location.lat],
-                getFillColor: [0, 0, 0, 0],
-                getLineColor: white,
+                getFillColor: (site: ExerciseInputs["staging"][number]) => (siteDown(site, time) ? [214, 64, 64, 80] : [0, 0, 0, 0]),
+                getLineColor: (site: ExerciseInputs["staging"][number]) => (siteDown(site, time) ? down : white),
                 stroked: true,
                 filled: false,
                 lineWidthMinPixels: 1.5,
@@ -588,19 +625,25 @@ function describePick(layerId: string, object: unknown, bundle: IncidentBundle):
 
     if (layerId === "assets") {
         const asset = object as InfrastructureAsset;
-        return { title: asset.name, lines: [asset.kind.replaceAll("_", " "), asset.classification] };
+        const lines = [asset.kind.replaceAll("_", " "), asset.classification];
+        const failure = asset.historicalActivation?.find((item) => /flood|impassable|closed|destroy|outage|unusable|collapse|down/i.test(item.status));
+        if (failure) lines.push(failure.status);
+        return { title: asset.name, lines };
     }
 
-    if (layerId === "disruptions") {
+    if (layerId === "disruptions" || layerId === "disruptions-line") {
         const disruption = object as InfrastructureDisruption;
-        const lines = [disruption.kind.replaceAll("_", " "), `From ${formatWhen(disruption.start, timeZone)}`];
+        const lines = [disruption.name, `From ${formatWhen(disruption.start, timeZone)}`];
         if (disruption.end) lines.push(`Until ${formatWhen(disruption.end, timeZone)}`);
-        return { title: disruption.name, lines };
+        return { title: "Road closed", lines };
     }
 
     if (layerId === "staging") {
         const site = object as ExerciseInputs["staging"][number];
-        return { title: site.name, lines: [site.kind.replaceAll("_", " "), site.classification] };
+        const lines = [site.kind.replaceAll("_", " "), site.classification];
+        if (site.unsuitableFrom) lines.push(`Unsuitable from ${formatWhen(site.unsuitableFrom, timeZone)}`);
+        if (site.unsuitableReason) lines.push(site.unsuitableReason);
+        return { title: site.name, lines };
     }
 
     if (layerId === "units" || layerId === "unit-paths" || layerId === "unit-paths-ahead") {
@@ -683,7 +726,7 @@ const INITIAL_LAYERS: Record<LayerId, boolean> = {
     storm: true,
     observations: false,
     assets: false,
-    disruptions: false,
+    disruptions: true,
     surge: false,
     evacuation: false,
     county: true,
@@ -754,7 +797,7 @@ function EventStrip({
         () => bundle.timeline.filter((event) => event.source?.sourceId !== "noaa-hurdat2"),
         [bundle.timeline],
     );
-    const closures = bundle.disruptions.filter((disruption) => disruption.path.length > 1);
+    const closures = roadClosures(bundle).filter((disruption) => disruption.path.length > 1);
     const closureLayout = closures.map((disruption) => {
         const opened = Date.parse(disruption.start);
         const closed = disruption.end ? Date.parse(disruption.end) : end;
@@ -939,7 +982,7 @@ function EventStrip({
                             width={Math.max(2, x(item.closed) - x(item.opened))}
                             y={closuresY + 6 + item.row * 8}
                             height={5}
-                            fill="#f2f2f2"
+                            fill="#c44848"
                             opacity={0.9}
                             onPointerDown={(eventPointer) => {
                                 eventPointer.stopPropagation();

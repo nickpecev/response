@@ -205,11 +205,6 @@ export function simulate(inputs: ExerciseInputs, roads: RoadGraph | null): Simul
     }
     const maskCache = new Map<string, Uint8Array>();
 
-    function closureKnown(disruption: ExerciseInputs["disruptions"][number]) {
-        if (disruption.discoveredInField) return disruption.knownToDispatchAt ? Date.parse(disruption.knownToDispatchAt) : Infinity;
-        return disruption.knownToDispatchAt ? Date.parse(disruption.knownToDispatchAt) : Date.parse(disruption.start);
-    }
-
     function closureActive(disruption: ExerciseInputs["disruptions"][number], time: number) {
         const end = disruption.end ? Date.parse(disruption.end) : Infinity;
         return time >= Date.parse(disruption.start) && time < end;
@@ -224,7 +219,7 @@ export function simulate(inputs: ExerciseInputs, roads: RoadGraph | null): Simul
         const known: string[] = [];
         const mask = new Uint8Array(network.edgeCount);
         for (const disruption of inputs.disruptions) {
-            if (!affects(disruption, mode) || !closureActive(disruption, time) || closureKnown(disruption) > time) continue;
+            if (!affects(disruption, mode) || !closureActive(disruption, time)) continue;
             known.push(disruption.id);
             for (const edge of disruption.edgeIds) if (edge >= 0 && edge < mask.length) mask[edge] = 1;
         }
@@ -249,6 +244,19 @@ export function simulate(inputs: ExerciseInputs, roads: RoadGraph | null): Simul
             }
         }
         if (mode === "ground" && floodEdges?.[edge] && time >= floodStart && time < floodEnd) return "flood" as const;
+        return null;
+    }
+
+    function closesDuring(edge: number, mode: "ground" | "high_water", from: number, to: number) {
+        const list = closureEdges.get(edge);
+        if (list) {
+            for (const disruption of list) {
+                if (!affects(disruption, mode)) continue;
+                const start = Date.parse(disruption.start);
+                if (start > from && start < to) return disruption;
+            }
+        }
+        if (mode === "ground" && floodEdges?.[edge] && floodStart > from && floodStart < to) return "flood" as const;
         return null;
     }
 
@@ -310,13 +318,13 @@ export function simulate(inputs: ExerciseInputs, roads: RoadGraph | null): Simul
             }
             let stopped = false;
             for (const leg of route.legs) {
-                const block = blockedNow(leg.edge, mode, time);
+                const legEnd = time + (leg.seconds / factor) * 1000;
+                const block = blockedNow(leg.edge, mode, time) ?? closesDuring(leg.edge, mode, time, legEnd);
                 if (block && mask && !mask[leg.edge]) {
                     noteBlock(runner, leg.edge, block);
                     stopped = true;
                     break;
                 }
-                const legEnd = time + (leg.seconds / factor) * 1000;
                 trace(runner, leg.points, time, legEnd);
                 time = legEnd;
             }
