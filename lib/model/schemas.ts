@@ -1,6 +1,6 @@
 import { TimePrecision, z } from "zod";
 
-//Primitives
+// Primitives
 
 export const classificationSchema = z.enum(["verified", "modeled", "simulated"]);
 
@@ -44,7 +44,7 @@ export const sourceSchema = z.object({
     originalText: z.string().optional(),
     extractionMethod: z.string(),
     sourceTimestamp: isoUtc.optional(),
-    TimePrecision: timeSchema.optional(),
+    timePrecision: timeSchema.optional(),
     locationPrecision: locationSchema.optional(),
     classification: classificationSchema.optional(),
     confidence: z.enum(["high", "medium", "low"]),
@@ -126,3 +126,73 @@ export const unitSchema = z.object({
     classification: classificationSchema
 });
 
+// Config & Manifest
+export const exerciseInputsSchema = z.object({
+    scenarioId: z.string(),
+    incidentId: z.string(),
+    name: z.string(),
+    seed: z.number().int(),
+    window: z.object({ start: isoUtc, end: isoUtc }),
+    zones: z.array(
+        z.object({
+            id: z.string(),
+            name: z.string(),
+            ring: z.array(z.tuple([lon, lat])).min(3),
+        })
+    ),
+    staging: z.array(
+            z.object({
+                id: z.string(),
+                name: z.string(),
+                location: coordinateSchema,
+                type: z.enum(["ground", "air"])
+            })
+        ),
+        policy: z.enum(["priority_nearest", "nearest_first", "priority_oldest"]),
+    }).superRefine((dataRaw, ctx) => {
+        const data = dataRaw as any as {
+            staging: Array<{ id: string }>;
+            units?: Array<{ stagingId?: string }>;
+            calls?: Array<{ id: string }>;
+        };
+
+        const stagingIds = new Set(data.staging.map((s) => s.id) || []);
+        data.units?.forEach((unit, idx) => {
+            if (unit.stagingId && !stagingIds.has(unit.stagingId)) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["units", idx, "stagingId"],
+                    message: `Staging ID not found: ${unit.stagingId}`,
+                });
+            }
+        });
+
+        const callIds = new Set<string>();
+        data.calls?.forEach((call, idx) => {
+            if (callIds.has(call.id)) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["calls", idx, "id"],
+                    message: `Duplicate call ID "${call.id}".`,
+                });
+            }
+        callIds.add(call.id);
+    });
+});
+
+export const manifestSchema = z.object({
+    id: z.string().regex(/^[a-z0-9-]+$/),
+    name: z.string(),
+    shortName: z.string(),
+    type: z.array(z.string()),
+    region: z.string(),
+    timezone: z.string(),
+    bbox: z.tuple([lon, lat, lon, lat]),
+    center: z.tuple([lon, lat]),
+    zoom: z.number(),
+    timeRange: z.object({ start: isoUtc, end: isoUtc }),
+    description: z.string(),
+    classification: z.array(classificationSchema),
+    datasets: z.record(z.string(), z.string()),
+    createdBy: z.enum(["bundled", "user"])
+});
