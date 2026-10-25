@@ -10,6 +10,7 @@ import type { FeatureCollection } from "geojson";
 import type { ExerciseInputs, InfrastructureAsset, Observation } from "@/lib/model/types";
 import type { IncidentBundle, InfrastructureDisruption, RoadGraph, StormTrackPoint } from "@/lib/model/data/loader";
 import { positionAt, simulate, type SimulatedUnit, type Simulation } from "@/lib/simulation/engine";
+import { EventList } from "@/components/map/EventList";
 
 maplibre.setWorkerUrl("/vendor/maplibre-gl-worker.mjs");
 
@@ -1094,8 +1095,14 @@ export function Map({ bundle, roads }: MapProps) {
         setTip({ ...described, x: info.x, y: info.y });
     }
 
+    function showEvent(next: number) {
+        if (playing) setPlaying(false);
+        setTime(Math.min(end, Math.max(start, next)));
+    }
+
     return (
-        <div className="map-frame relative h-full w-full" onMouseLeave={() => setTip(null)}>
+        <div className="flex h-full w-full">
+            <div className="map-frame relative min-h-0 min-w-0 flex-1" onMouseLeave={() => setTip(null)}>
             <div className="absolute top-3 left-3 z-10 border border-line bg-bg px-2 py-1 text-xs text-dim">
                 <a href="https://openfreemap.org" target="_blank" rel="noreferrer" className="text-fg">
                     OpenFreeMap
@@ -1155,6 +1162,8 @@ export function Map({ bundle, roads }: MapProps) {
                     ))}
                 </div>
             )}
+            </div>
+            <EventList events={bundle.timeline} time={time} timeZone={bundle.manifest.timezone} onSelect={showEvent} />
         </div>
     );
 }
