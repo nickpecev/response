@@ -270,7 +270,7 @@ export const exerciseInputsSchema = z.object({
         description: z.string(),
         classification: classificationSchema,
         source: sourceSchema,
-    }),
+    }).optional(),
     speedPhases: z.array(
         z.object({
             start: isoUtc,

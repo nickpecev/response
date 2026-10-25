@@ -153,8 +153,8 @@ export function simulate(inputs: ExerciseInputs, roads: RoadGraph | null): Simul
     const phases: Phase[] = inputs.speedPhases
         .map((phase) => ({ t: Date.parse(phase.start), factor: phase.factor }))
         .sort((a, b) => a.t - b.t);
-    const suspensionStart = Date.parse(inputs.suspension.start);
-    const suspensionEnd = Date.parse(inputs.suspension.end);
+    const suspensionStart = inputs.suspension ? Date.parse(inputs.suspension.start) : Number.POSITIVE_INFINITY;
+    const suspensionEnd = inputs.suspension ? Date.parse(inputs.suspension.end) : Number.NEGATIVE_INFINITY;
     const windowEnd = Date.parse(inputs.window.end);
     const ackMs = ((inputs.baseAckMin[0] + inputs.baseAckMin[1]) / 2) * 60_000;
 

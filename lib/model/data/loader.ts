@@ -122,6 +122,15 @@ function incidentBase(id: string) {
     return `/data/incidents/${id}/`;
 }
 
+function normalize(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(normalize);
+    if (!value || typeof value !== "object") return value;
+    const record: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(value)) record[key] = normalize(child);
+    if (!record.source && record.provenance) record.source = record.provenance;
+    return record;
+}
+
 async function getJSON<T>(url: string): Promise<T> {
     let pending = memo.get(url) as Promise<T> | undefined;
     if (!pending) {
@@ -184,10 +193,10 @@ export async function loadBundledIncident(id: string): Promise<IncidentBundle> {
     return {
         manifest,
         sources: sources ?? [],
-        timeline: timeline ?? [],
-        observations: observations ?? [],
-        assets: assets ?? [],
-        disruptions: disruptions ?? [],
+        timeline: (normalize(timeline ?? []) as TimelineEvent[]),
+        observations: (normalize(observations ?? []) as Observation[]),
+        assets: (normalize(assets ?? []) as InfrastructureAsset[]),
+        disruptions: (normalize(disruptions ?? exercise?.disruptions ?? []) as InfrastructureDisruption[]),
         storm,
         surgeZones,
         evacZones,
@@ -195,7 +204,7 @@ export async function loadBundledIncident(id: string): Promise<IncidentBundle> {
         hazardArea,
         imagery: imagery ?? [],
         conflicts: conflicts ?? [],
-        exercise,
+        exercise: exercise ? (normalize(exercise) as ExerciseInputs) : undefined,
         graphUrl: datasets.roadGraph ? incidentBase(id) + datasets.roadGraph : undefined,
     };
 }

@@ -24,7 +24,7 @@ export function EventList({ events, time, timeZone, onSelect }: EventListProps) 
     const currentRef = useRef<HTMLButtonElement>(null);
     const listed = useMemo(() => {
         return events
-            .filter((event) => event.source.sourceId !== "noaa-hurdat2" && event.source.sourceId !== "usgs-stn-ian")
+            .filter((event) => event.source?.sourceId !== "noaa-hurdat2" && event.source?.sourceId !== "usgs-stn-ian")
             .slice()
             .sort((a, b) => Date.parse(a.t) - Date.parse(b.t));
     }, [events]);

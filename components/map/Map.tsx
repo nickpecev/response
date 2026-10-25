@@ -751,7 +751,7 @@ function EventStrip({
         }));
     }, [bundle.storm]);
     const events = useMemo(
-        () => bundle.timeline.filter((event) => event.source.sourceId !== "noaa-hurdat2"),
+        () => bundle.timeline.filter((event) => event.source?.sourceId !== "noaa-hurdat2"),
         [bundle.timeline],
     );
     const closures = bundle.disruptions.filter((disruption) => disruption.path.length > 1);
@@ -889,7 +889,7 @@ function EventStrip({
                     {stormH > 0 && <line x1={0} x2={track} y1={stormY} y2={stormY} stroke="#222" />}
                     {eventsH > 0 && <line x1={0} x2={track} y1={eventsY} y2={eventsY} stroke="#222" />}
                     {closuresH > 0 && <line x1={0} x2={track} y1={closuresY} y2={closuresY} stroke="#222" />}
-                    {bundle.exercise && (
+                    {bundle.exercise?.suspension && (
                         <rect
                             x={x(Date.parse(bundle.exercise.suspension.start))}
                             width={Math.max(1, x(Date.parse(bundle.exercise.suspension.end)) - x(Date.parse(bundle.exercise.suspension.start)))}
