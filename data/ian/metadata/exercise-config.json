@@ -1,7 +1,7 @@
 {
   "incidentId": "ian-2022",
   "scenarioId": "ian-exercise-baseline",
-  "name": "Synthetic Response Exercise — Lee County (Baseline)",
+  "name": "Simulated Response Exercise — Lee County (Baseline)",
   "seed": 20220928,
   "window": {
     "start": "2022-09-27T16:00:00.000Z",

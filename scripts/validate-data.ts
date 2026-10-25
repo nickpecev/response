@@ -7,7 +7,7 @@ import {
   exerciseInputsSchema,
   manifestSchema,
   observationSchema,
-  sourceSchema,
+  dataSourceSchema,
   timelineEventSchema,
 } from "../lib/model/schemas";
 
@@ -75,11 +75,11 @@ function main() {
         const validSourceIds = new Set<string>();
 
         rawSources.forEach((source, index) => {
-            const parsed = sourceSchema.safeParse(source);
+            const parsed = dataSourceSchema.safeParse(source);
             if (!parsed.success) {
                 logError(incidentId, `Source ${index} validation failed`);
             } else {
-                validSourceIds.add(parsed.data.sourceId);
+                validSourceIds.add(parsed.data.id);
             }
         });
 
@@ -93,7 +93,7 @@ function main() {
             const filepath = path.join(incidentDir, filename);
             const records = JSON.parse(fs.readFileSync(filepath, "utf8")) as Array<{
                 id: string;
-                provenance?: { sourceId: string };
+                source?: { sourceId: string };
             }>;
 
             let invalid = 0;
@@ -107,9 +107,9 @@ function main() {
                     }
                 }
 
-                if (record.provenance && !validSourceIds.has(record.provenance.sourceId)) {
+                if (record.source && !validSourceIds.has(record.source.sourceId)) {
                     if (invalid++ < 3) {
-                        logError(incidentId, `${key} ${record.id} source validation failed: Unknown source ID "${record.provenance.sourceId}".`);
+                        logError(incidentId, `${key} ${record.id} source validation failed: Unknown source ID "${record.source.sourceId}".`);
                     }
                 }
             });
