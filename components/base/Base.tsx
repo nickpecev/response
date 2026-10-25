@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { useApp } from "@/lib/store/app";
-import { cn } from "@/lib/utils";
 import { IncidentSwitcher } from "@/components/base/IncidentSwitcher";
 
 interface NavItem {
@@ -20,25 +19,12 @@ const NAV: NavItem[] = [
     // { href: "/investigations", label: "Investigations" },
     // { href: "/analytics", label: "Analytics" },
     // { href: "/reports", label: "After-Action Reports" },
-    { href: "/settings", label: "Settings" },
+    // { href: "/settings", label: "Settings" },
 ];
 
 function navHref(item: NavItem, activeIncidentId: string) {
     if (item.scoped) return `/workspace/${activeIncidentId}`;
     return item.href;
-}
-
-function isCurrent(href: string, pathname: string) {
-    if (href === "/") return pathname === "/";
-    return pathname.startsWith(href);
-}
-
-function Logo() {
-    return (
-        <Link href="/" className="block truncate px-2 text-sm text-fg">
-            Response Tool
-        </Link>
-    );
 }
 
 interface BaseProps {
@@ -57,21 +43,20 @@ export function Base({ children }: BaseProps) {
         <div className="flex h-dvh w-full overflow-hidden bg-bg text-fg">
             <aside className="no-print flex w-52 shrink-0 flex-col border-r border-line bg-bg">
                 <div className="space-y-3 border-b border-line px-2 py-3">
-                    <Logo />
+                    <Link href="/" className="block truncate px-2 text-sm text-fg">
+                        Response Tool
+                    </Link>
                     <IncidentSwitcher />
                 </div>
                 <nav className="flex-1 space-y-0.5 overflow-y-auto p-2" aria-label="Main">
                     {NAV.map((item) => {
                         const href = navHref(item, activeIncidentId);
-                        const current = isCurrent(item.href, pathname);
+                        const current = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
                         return (
                             <Link
                                 key={item.href}
                                 href={href}
-                                className={cn(
-                                    "flex h-8 items-center px-2 text-[13px]",
-                                    current ? "text-fg" : "text-muted hover:text-fg",
-                                )}
+                                className={`flex h-8 items-center px-2 text-[13px] ${current ? "text-fg" : "text-muted hover:text-fg"}`}
                             >
                                 <span className="truncate">{item.label}</span>
                             </Link>

@@ -35,7 +35,7 @@ body {
 
 .map-frame .maplibregl-ctrl-bottom-right,
 .map-frame .maplibregl-ctrl-bottom-left {
-    bottom: 3.25rem;
+    bottom: 13rem;
 }
 
 @media print {

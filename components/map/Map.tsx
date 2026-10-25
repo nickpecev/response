@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as maplibre from "maplibre-gl";
 import MapCanvas, { Layer, NavigationControl, ScaleControl, Source, useControl } from "react-map-gl/maplibre";
 import { MapboxOverlay, type MapboxOverlayProps } from "@deck.gl/mapbox";
@@ -8,7 +8,7 @@ import { GeoJsonLayer, PathLayer, PolygonLayer, ScatterplotLayer, TextLayer } fr
 import type { Layer as DeckLayer, PickingInfo } from "@deck.gl/core";
 import type { FeatureCollection } from "geojson";
 import type { ExerciseInputs, InfrastructureAsset, Observation } from "@/lib/model/types";
-import type { GeoJSONFC, IncidentBundle, InfrastructureDisruption, RoadGraph, StormTrackPoint } from "@/lib/model/data/loader";
+import type { IncidentBundle, InfrastructureDisruption, RoadGraph, StormTrackPoint } from "@/lib/model/data/loader";
 import { positionAt, simulate, type SimulatedUnit, type Simulation } from "@/lib/simulation/engine";
 
 maplibre.setWorkerUrl("/vendor/maplibre-gl-worker.mjs");
@@ -27,54 +27,51 @@ const SURGE: [number, number, number, number][] = [
     [110, 36, 92, 160],
 ];
 
-function surgeColor(category: number): [number, number, number, number] {
-    return SURGE[category - 1] ?? faint;
-}
+const UNIT_COLORS: [number, number, number][] = [
+    [86, 180, 233],
+    [230, 159, 0],
+    [0, 196, 140],
+    [213, 94, 0],
+    [166, 140, 232],
+    [240, 112, 160],
+    [140, 196, 72],
+    [86, 140, 232],
+    [232, 196, 86],
+    [72, 196, 196],
+    [232, 120, 96],
+    [160, 160, 232],
+];
 
-function unitColor(index: number): [number, number, number] {
-    const hue = ((index * 137.508) % 360) / 360;
-    const chroma = 0.62 * (1 - Math.abs((2 * 0.58) - 1));
-    const x = chroma * (1 - Math.abs(((hue * 6) % 2) - 1));
-    const match = 0.58 - chroma / 2;
-    let red = 0;
-    let green = 0;
-    let blue = 0;
-    const sector = Math.floor(hue * 6);
-    if (sector === 0) [red, green, blue] = [chroma, x, 0];
-    else if (sector === 1) [red, green, blue] = [x, chroma, 0];
-    else if (sector === 2) [red, green, blue] = [0, chroma, x];
-    else if (sector === 3) [red, green, blue] = [0, x, chroma];
-    else if (sector === 4) [red, green, blue] = [x, 0, chroma];
-    else [red, green, blue] = [chroma, 0, x];
-    return [Math.round((red + match) * 255), Math.round((green + match) * 255), Math.round((blue + match) * 255)];
-}
-
-function tripPath(unit: SimulatedUnit, time: number): [number, number][] | null {
+function tripLines(unit: SimulatedUnit, time: number) {
     const trip = unit.trips.find((item) => time >= item.start && time < item.end);
     if (!trip) return null;
-
-    const path: [number, number][] = [];
-    for (const point of unit.track) {
-        if (point.t < trip.start || point.t > time) continue;
-        const last = path[path.length - 1];
-        if (last && last[0] === point.lon && last[1] === point.lat) continue;
-        path.push([point.lon, point.lat]);
-    }
-
     const at = positionAt(unit.track, time);
-    if (at) {
+    if (!at) return null;
+
+    const done: [number, number][] = [];
+    const ahead: [number, number][] = [[at.lon, at.lat]];
+
+    function add(path: [number, number][], lon: number, lat: number) {
         const last = path[path.length - 1];
-        if (!last || last[0] !== at.lon || last[1] !== at.lat) path.push([at.lon, at.lat]);
+        if (last && last[0] === lon && last[1] === lat) return;
+        path.push([lon, lat]);
     }
-    return path.length > 1 ? path : null;
-}
 
-function collection(data: GeoJSONFC): FeatureCollection {
-    return data as FeatureCollection;
-}
+    const start = positionAt(unit.track, trip.start);
+    if (start) add(done, start.lon, start.lat);
+    for (const point of unit.track) {
+        if (point.t <= trip.start || point.t >= trip.end) continue;
+        if (point.t <= time) add(done, point.lon, point.lat);
+        else add(ahead, point.lon, point.lat);
+    }
+    add(done, at.lon, at.lat);
+    const finish = positionAt(unit.track, trip.end);
+    if (finish) add(ahead, finish.lon, finish.lat);
 
-function located(observations: Observation[], kind: Observation["kind"]) {
-    return observations.filter((observation) => observation.kind === kind && observation.location);
+    return {
+        done: done.length > 1 ? done : null,
+        ahead: ahead.length > 1 ? ahead : null,
+    };
 }
 
 function formatWhen(iso: string, timeZone: string) {
@@ -87,12 +84,6 @@ function formatWhen(iso: string, timeZone: string) {
         timeZoneName: "short",
     }).format(new Date(iso));
 }
-
-function readable(value: string) {
-    return value.replaceAll("_", " ");
-}
-
-
 
 type LayerId =
     | "imagery"
@@ -137,7 +128,6 @@ function layersIn(bundle: IncidentBundle) {
     if (bundle.exercise?.staging.length) present.add("staging");
     if (bundle.exercise?.calls.length) present.add("calls");
     if (bundle.exercise?.units.length) present.add("units");
-    
     return LAYER_LABELS.filter((layer) => present.has(layer.id));
 }
 
@@ -183,13 +173,13 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
     const stormPoints = (bundle.storm?.points ?? []).filter((point) => Date.parse(point.t) <= time);
     const exercise = bundle.exercise;
     const observations = bundle.observations.filter((observation) => observation.location && observationReady(observation, time));
-    const taskForces = located(observations, "task_force_position");
+    const taskForces = observations.filter((observation) => observation.kind === "task_force_position" && observation.location);
 
     if (visible.county && bundle.hazardArea) {
         layers.push(
             new GeoJsonLayer({
                 id: "hazard",
-                data: collection(bundle.hazardArea),
+                data: bundle.hazardArea as FeatureCollection,
                 stroked: true,
                 filled: false,
                 getLineColor: line,
@@ -202,12 +192,12 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
         layers.push(
             new GeoJsonLayer({
                 id: "surge",
-                data: collection(bundle.surgeZones),
+                data: bundle.surgeZones as FeatureCollection,
                 filled: true,
                 stroked: true,
-                getFillColor: (feature: { properties?: { category?: number } }) => surgeColor(feature.properties?.category ?? 0),
+                getFillColor: (feature: { properties?: { category?: number } }) => SURGE[(feature.properties?.category ?? 0) - 1] ?? faint,
                 getLineColor: (feature: { properties?: { category?: number } }) => {
-                    const [red, green, blue] = surgeColor(feature.properties?.category ?? 0);
+                    const [red, green, blue] = SURGE[(feature.properties?.category ?? 0) - 1] ?? faint;
                     return [red, green, blue, 220];
                 },
                 lineWidthMinPixels: 1,
@@ -220,7 +210,7 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
         layers.push(
             new GeoJsonLayer({
                 id: "evac-zones",
-                data: collection(bundle.evacZones),
+                data: bundle.evacZones as FeatureCollection,
                 filled: true,
                 stroked: true,
                 getFillColor: [242, 242, 242, 12],
@@ -235,7 +225,7 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
         layers.push(
             new GeoJsonLayer({
                 id: "evac-routes",
-                data: collection(bundle.evacRoutes),
+                data: bundle.evacRoutes as FeatureCollection,
                 getLineColor: [242, 242, 242, 80],
                 lineWidthMinPixels: 1,
                 pickable: true,
@@ -384,18 +374,27 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
         );
     }
 
-    const calls = exercise?.calls.filter((call) => Date.parse(call.createdAt) <= time) ?? [];
+    const finished: Record<string, number> = {};
+    if (simulation) {
+        for (const item of simulation.handled) finished[item.id] = item.at;
+    }
+    const calls = (exercise?.calls ?? [])
+        .filter((call) => Date.parse(call.createdAt) <= time)
+        .map((call) => {
+            const at = finished[call.id];
+            return { call, handled: at !== undefined && time >= at };
+        });
     if (visible.calls && calls.length) {
         layers.push(
             new ScatterplotLayer({
                 id: "calls",
                 data: calls,
-                getPosition: (call: ExerciseInputs["calls"][number]) => [call.location.lon, call.location.lat],
-                getFillColor: [255, 255, 255, 255],
+                getPosition: (item: (typeof calls)[number]) => [item.call.location.lon, item.call.location.lat],
+                getFillColor: (item: (typeof calls)[number]) => (item.handled ? [138, 138, 138, 255] : [255, 255, 255, 255]),
                 getLineColor: [0, 0, 0, 255],
                 stroked: true,
                 lineWidthMinPixels: 1,
-                getRadius: (call: ExerciseInputs["calls"][number]) => (call.priority === 1 ? 5 : 3.5),
+                getRadius: (item: (typeof calls)[number]) => (item.call.priority === 1 ? 5 : 3.5),
                 radiusUnits: "pixels",
                 pickable: true,
             }),
@@ -403,33 +402,60 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
     }
 
     if (visible.units && simulation) {
-        const drawn = simulation.units.flatMap((unit, index) => {
+        const markers: { unit: SimulatedUnit; color: [number, number, number]; lon: number; lat: number }[] = [];
+        const traveled: { unit: SimulatedUnit; color: [number, number, number]; path: [number, number][] }[] = [];
+        const upcoming: { unit: SimulatedUnit; color: [number, number, number]; path: [number, number][] }[] = [];
+        for (let index = 0; index < simulation.units.length; index++) {
+            const unit = simulation.units[index];
             const at = positionAt(unit.track, time);
-            if (!at || time > unit.shiftEnd) return [];
-            return [{ unit, color: unitColor(index), lon: at.lon, lat: at.lat, path: tripPath(unit, time) }];
-        });
-        const trails = drawn.filter((item) => item.path);
-        if (trails.length) {
+            if (!at || time > unit.shiftEnd) continue;
+            const color = UNIT_COLORS[index % UNIT_COLORS.length];
+            markers.push({ unit, color, lon: at.lon, lat: at.lat });
+            const lines = tripLines(unit, time);
+            if (!lines) continue;
+            if (lines.done) traveled.push({ unit, color, path: lines.done });
+            if (lines.ahead) upcoming.push({ unit, color, path: lines.ahead });
+        }
+        const pathParameters = { depthCompare: "always" as const, depthWriteEnabled: false };
+        if (upcoming.length) {
             layers.push(
                 new PathLayer({
-                    id: "unit-paths",
-                    data: trails,
-                    getPath: (item: (typeof trails)[number]) => item.path!,
-                    getColor: (item: (typeof trails)[number]) => [...item.color, 210],
-                    widthMinPixels: 2,
+                    id: "unit-paths-ahead",
+                    data: upcoming,
+                    getPath: (item: (typeof upcoming)[number]) => item.path,
+                    getColor: (item: (typeof upcoming)[number]) => [item.color[0], item.color[1], item.color[2], 64],
+                    getWidth: 2,
+                    widthUnits: "pixels",
                     capRounded: true,
                     jointRounded: true,
+                    parameters: pathParameters,
                     pickable: true,
                 }),
             );
         }
-        if (drawn.length) {
+        if (traveled.length) {
+            layers.push(
+                new PathLayer({
+                    id: "unit-paths",
+                    data: traveled,
+                    getPath: (item: (typeof traveled)[number]) => item.path,
+                    getColor: (item: (typeof traveled)[number]) => [item.color[0], item.color[1], item.color[2], 230],
+                    getWidth: 2,
+                    widthUnits: "pixels",
+                    capRounded: true,
+                    jointRounded: true,
+                    parameters: pathParameters,
+                    pickable: true,
+                }),
+            );
+        }
+        if (markers.length) {
             layers.push(
                 new ScatterplotLayer({
                     id: "units",
-                    data: drawn,
-                    getPosition: (item: (typeof drawn)[number]) => [item.lon, item.lat],
-                    getFillColor: (item: (typeof drawn)[number]) => [...item.color, 255],
+                    data: markers,
+                    getPosition: (item: (typeof markers)[number]) => [item.lon, item.lat],
+                    getFillColor: (item: (typeof markers)[number]) => [item.color[0], item.color[1], item.color[2], 255],
                     getLineColor: [0, 0, 0, 255],
                     stroked: true,
                     lineWidthMinPixels: 1,
@@ -454,7 +480,7 @@ function describePick(layerId: string, object: unknown, bundle: IncidentBundle):
 
     if (layerId === "observations" || layerId === "task-force-labels") {
         const observation = object as Observation;
-        const lines = [readable(observation.kind)];
+        const lines = [observation.kind.replaceAll("_", " ")];
         if (observation.value !== undefined) {
             lines.push(`${observation.value} ${observation.unit ?? ""}`.trim());
         }
@@ -464,32 +490,32 @@ function describePick(layerId: string, object: unknown, bundle: IncidentBundle):
 
     if (layerId === "assets") {
         const asset = object as InfrastructureAsset;
-        return { title: asset.name, lines: [readable(asset.kind), asset.classification] };
+        return { title: asset.name, lines: [asset.kind.replaceAll("_", " "), asset.classification] };
     }
 
     if (layerId === "disruptions") {
         const disruption = object as InfrastructureDisruption;
-        const lines = [readable(disruption.kind), `From ${formatWhen(disruption.start, timeZone)}`];
+        const lines = [disruption.kind.replaceAll("_", " "), `From ${formatWhen(disruption.start, timeZone)}`];
         if (disruption.end) lines.push(`Until ${formatWhen(disruption.end, timeZone)}`);
         return { title: disruption.name, lines };
     }
 
     if (layerId === "staging") {
         const site = object as ExerciseInputs["staging"][number];
-        return { title: site.name, lines: [readable(site.kind), site.classification] };
+        return { title: site.name, lines: [site.kind.replaceAll("_", " "), site.classification] };
     }
 
-    if (layerId === "units" || layerId === "unit-paths") {
+    if (layerId === "units" || layerId === "unit-paths" || layerId === "unit-paths-ahead") {
         const unit = (object as { unit: SimulatedUnit }).unit;
-        return { title: unit.callSign, lines: [readable(unit.type), unit.classification] };
+        return { title: unit.callSign, lines: [unit.type.replaceAll("_", " "), unit.classification] };
     }
 
     if (layerId === "calls") {
-        const call = object as ExerciseInputs["calls"][number];
-        return {
-            title: call.id,
-            lines: [`${readable(call.category)}, priority ${call.priority}`, formatWhen(call.createdAt, timeZone), call.classification],
-        };
+        const item = object as { call: ExerciseInputs["calls"][number]; handled: boolean };
+        const call = item.call;
+        const lines = [`${call.category.replaceAll("_", " ")}, priority ${call.priority}`, formatWhen(call.createdAt, timeZone), call.classification];
+        if (item.handled) lines.push("Handled");
+        return { title: call.id, lines };
     }
 
     if (layerId === "storm-center" || layerId === "storm-fixes") {
@@ -502,11 +528,6 @@ function describePick(layerId: string, object: unknown, bundle: IncidentBundle):
     if (layerId === "storm-path") {
         if (!bundle.storm) return null;
         return { title: bundle.storm.name, lines: [bundle.storm.interpolationNote] };
-    }
-
-    if (layerId === "wind-field") {
-        const ring = object as { key: string };
-        return { title: `${ring.key.replace("kt", "")} kt wind radius`, lines: ["Quadrant radii from the best track"] };
     }
 
     if (layerId === "surge") {
@@ -559,9 +580,9 @@ const INITIAL_LAYERS: Record<LayerId, boolean> = {
     observations: false,
     assets: false,
     disruptions: false,
-    surge: true,
+    surge: false,
     evacuation: false,
-    county: false,
+    county: true,
     flood: false,
     staging: false,
     calls: true,
@@ -580,7 +601,7 @@ function LayerToggle({
     const [open, setOpen] = useState(false);
 
     return (
-        <div className="absolute bottom-14 left-3 z-10 border border-line bg-bg">
+        <div className="absolute bottom-52 left-3 z-10 border border-line bg-bg">
             {open && (
                 <div className="border-b border-line py-1">
                     {options.map((option) => (
@@ -611,54 +632,377 @@ function LayerToggle({
     );
 }
 
+const SPEEDS = [1, 5, 15, 60, 240] as const;
+const HEADER = 18;
+const LANE_LABEL = 76;
+
+function stormCategory(windKt: number) {
+    if (windKt >= 137) return 5;
+    if (windKt >= 113) return 4;
+    if (windKt >= 96) return 3;
+    if (windKt >= 83) return 2;
+    if (windKt >= 64) return 1;
+    return 0;
+}
+
+function formatDay(ms: number, timeZone: string) {
+    return new Intl.DateTimeFormat("en-US", { timeZone, month: "short", day: "numeric" }).format(ms);
+}
+
+function localHour(ms: number, timeZone: string) {
+    const hour = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hourCycle: "h23" }).format(new Date(ms));
+    return Number(hour) % 24;
+}
+
+function EventStrip({
+    bundle,
+    start,
+    end,
+    time,
+    timeZone,
+    playing,
+    onTime,
+    onToggle,
+}: {
+    bundle: IncidentBundle;
+    start: number;
+    end: number;
+    time: number;
+    timeZone: string;
+    playing: boolean;
+    onTime: (time: number) => void;
+    onToggle: () => void;
+}) {
+    const frame = useRef<HTMLDivElement>(null);
+    const drag = useRef(false);
+    const [width, setWidth] = useState(0);
+    const [hover, setHover] = useState<number | null>(null);
+    const span = Math.max(1, end - start);
+    const track = Math.max(1, width - LANE_LABEL);
+    const x = (ms: number) => ((ms - start) / span) * track;
+
+    const storm = useMemo(() => {
+        const points = bundle.storm?.points ?? [];
+        return points.map((point, index) => ({
+            t0: Date.parse(point.t),
+            t1: points[index + 1] ? Date.parse(points[index + 1].t) : Date.parse(point.t) + 6 * 3600_000,
+            category: stormCategory(point.windKt),
+        }));
+    }, [bundle.storm]);
+    const events = useMemo(
+        () => bundle.timeline.filter((event) => event.source.sourceId !== "noaa-hurdat2"),
+        [bundle.timeline],
+    );
+    const closures = bundle.disruptions.filter((disruption) => disruption.path.length > 1);
+    const closureLayout = closures.map((disruption) => {
+        const opened = Date.parse(disruption.start);
+        const closed = disruption.end ? Date.parse(disruption.end) : end;
+        return { disruption, opened, closed, row: 0 };
+    });
+    const lanes: { opened: number; closed: number }[][] = [];
+    for (const item of closureLayout) {
+        let row = lanes.findIndex((lane) => lane.every((other) => other.closed <= item.opened || item.closed <= other.opened));
+        if (row < 0) {
+            row = lanes.length;
+            lanes.push([]);
+        }
+        lanes[row].push(item);
+        item.row = row;
+    }
+    const stormH = storm.length ? 18 : 0;
+    const eventsH = events.length ? 18 : 0;
+    const closuresH = closureLayout.length ? lanes.length * 8 + 8 : 0;
+    const height = HEADER + stormH + eventsH + closuresH + 4;
+    let cursor = HEADER;
+    const stormY = cursor;
+    cursor += stormH;
+    const eventsY = cursor;
+    cursor += eventsH;
+    const closuresY = cursor;
+
+    useEffect(() => {
+        const node = frame.current;
+        if (!node) return;
+        const watch = new ResizeObserver(() => setWidth(node.clientWidth));
+        watch.observe(node);
+        setWidth(node.clientWidth);
+        return () => watch.disconnect();
+    }, []);
+
+    const ticks = useMemo(() => {
+        const marks: { t: number; major: boolean; label: string }[] = [];
+        let cursor = Math.ceil(start / 3600_000) * 3600_000;
+        for (; cursor <= end; cursor += 3600_000) {
+            const hour = localHour(cursor, timeZone);
+            if (hour !== 0 && hour !== 12) continue;
+            marks.push({ t: cursor, major: hour === 0, label: hour === 0 ? formatDay(cursor, timeZone) : "" });
+        }
+        return marks;
+    }, [start, end, timeZone]);
+
+    if (!storm.length && !events.length && !closureLayout.length) return null;
+
+    function seek(next: number, pause: boolean) {
+        if (pause && playing) onToggle();
+        onTime(Math.min(end, Math.max(start, next)));
+    }
+
+    function timeAt(clientX: number, node: SVGSVGElement) {
+        const rect = node.getBoundingClientRect();
+        const px = clientX - rect.left - LANE_LABEL;
+        return start + (Math.min(track, Math.max(0, px)) / track) * span;
+    }
+
+    const dateLabels: { t: number; label: string }[] = [];
+    let lastLabel = -56;
+    for (const tick of ticks) {
+        if (!tick.label) continue;
+        const left = x(tick.t);
+        if (left < lastLabel + 56) continue;
+        lastLabel = left;
+        dateLabels.push({ t: tick.t, label: tick.label });
+    }
+
+    return (
+        <div ref={frame} className="relative border-t border-line">
+            <svg
+                width={width || "100%"}
+                height={height}
+                className="block"
+                role="slider"
+                aria-label="Incident events"
+                aria-valuemin={start}
+                aria-valuemax={end}
+                aria-valuenow={time}
+                aria-valuetext={formatWhen(new Date(time).toISOString(), timeZone)}
+                tabIndex={0}
+                onPointerDown={(event) => {
+                    drag.current = true;
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                    seek(timeAt(event.clientX, event.currentTarget), true);
+                }}
+                onPointerMove={(event) => {
+                    const next = timeAt(event.clientX, event.currentTarget);
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    setHover(event.clientX - rect.left >= LANE_LABEL ? next : null);
+                    if (drag.current) onTime(Math.min(end, Math.max(start, next)));
+                }}
+                onPointerUp={() => {
+                    drag.current = false;
+                }}
+                onPointerLeave={() => setHover(null)}
+                onKeyDown={(event) => {
+                    const step = event.shiftKey ? 60 * 60_000 : 15 * 60_000;
+                    if (event.key === "ArrowRight") seek(time + step, true);
+                    if (event.key === "ArrowLeft") seek(time - step, true);
+                }}
+            >
+                {storm.length > 0 && (
+                    <text x={10} y={stormY + stormH / 2 + 3} fontSize={10} fill="#8a8a8a" fontFamily="Inter, sans-serif">
+                        Storm
+                    </text>
+                )}
+                {events.length > 0 && (
+                    <text x={10} y={eventsY + eventsH / 2 + 3} fontSize={10} fill="#8a8a8a" fontFamily="Inter, sans-serif">
+                        Events
+                    </text>
+                )}
+                {closureLayout.length > 0 && (
+                    <text x={10} y={closuresY + closuresH / 2 + 3} fontSize={10} fill="#8a8a8a" fontFamily="Inter, sans-serif">
+                        Closures
+                    </text>
+                )}
+                <g transform={`translate(${LANE_LABEL},0)`}>
+                    <clipPath id="event-strip-clip">
+                        <rect x={0} y={0} width={track} height={height} />
+                    </clipPath>
+                    <g clipPath="url(#event-strip-clip)">
+                    {ticks.map((tick) => (
+                        <line key={tick.t} x1={x(tick.t)} x2={x(tick.t)} y1={HEADER} y2={height} stroke={tick.major ? "#222" : "#141414"} />
+                    ))}
+                    {dateLabels.map((tick) => (
+                        <text key={tick.t} x={x(tick.t) + 4} y={12} fontSize={10} fill="#8a8a8a" fontFamily="Inter, sans-serif">
+                            {tick.label}
+                        </text>
+                    ))}
+                    {stormH > 0 && <line x1={0} x2={track} y1={stormY} y2={stormY} stroke="#222" />}
+                    {eventsH > 0 && <line x1={0} x2={track} y1={eventsY} y2={eventsY} stroke="#222" />}
+                    {closuresH > 0 && <line x1={0} x2={track} y1={closuresY} y2={closuresY} stroke="#222" />}
+                    {bundle.exercise && (
+                        <rect
+                            x={x(Date.parse(bundle.exercise.suspension.start))}
+                            width={Math.max(1, x(Date.parse(bundle.exercise.suspension.end)) - x(Date.parse(bundle.exercise.suspension.start)))}
+                            y={HEADER}
+                            height={height - HEADER}
+                            fill="#f2f2f2"
+                            opacity={0.05}
+                        >
+                            <title>{bundle.exercise.suspension.description}</title>
+                        </rect>
+                    )}
+                    {storm.map((segment) => {
+                        const [red, green, blue] = segment.category === 0 ? [92, 92, 92] : SURGE[segment.category - 1];
+                        return (
+                            <rect
+                                key={segment.t0}
+                                x={x(segment.t0)}
+                                width={Math.max(1, x(segment.t1) - x(segment.t0))}
+                                y={stormY + 5}
+                                height={8}
+                                fill={`rgb(${red} ${green} ${blue})`}
+                            >
+                                <title>{segment.category === 0 ? "Below hurricane strength" : `Category ${segment.category}`}</title>
+                            </rect>
+                        );
+                    })}
+                    {events.map((event) => (
+                        <rect
+                            key={event.id}
+                            x={x(Date.parse(event.t)) - 1}
+                            width={event.importance === 1 ? 3 : 2}
+                            y={eventsY + (event.importance === 1 ? 3 : 5)}
+                            height={event.importance === 1 ? 12 : 8}
+                            fill={event.importance === 1 ? "#f2f2f2" : "#8a8a8a"}
+                            onPointerDown={(eventPointer) => {
+                                eventPointer.stopPropagation();
+                                seek(Date.parse(event.t), true);
+                            }}
+                        >
+                            <title>{`${formatWhen(event.t, timeZone)} — ${event.title}`}</title>
+                        </rect>
+                    ))}
+                    {closureLayout.map((item) => (
+                        <rect
+                            key={item.disruption.id}
+                            x={x(item.opened)}
+                            width={Math.max(2, x(item.closed) - x(item.opened))}
+                            y={closuresY + 6 + item.row * 8}
+                            height={5}
+                            fill="#f2f2f2"
+                            opacity={0.9}
+                            onPointerDown={(eventPointer) => {
+                                eventPointer.stopPropagation();
+                                seek(item.opened, true);
+                            }}
+                        >
+                            <title>{`${item.disruption.name} — from ${formatWhen(item.disruption.start, timeZone)}`}</title>
+                        </rect>
+                    ))}
+                    {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={0} y2={height} stroke="#5c5c5c" />}
+                    <line x1={x(time)} x2={x(time)} y1={0} y2={height} stroke="#f2f2f2" />
+                    </g>
+                </g>
+            </svg>
+            {hover !== null && (
+                <div
+                    className="pointer-events-none absolute top-0 border border-line bg-bg px-1.5 py-0.5 text-xs text-fg"
+                    style={{ left: Math.min(width - 140, LANE_LABEL + x(hover) + 8) }}
+                >
+                    {formatWhen(new Date(hover).toISOString(), timeZone)}
+                </div>
+            )}
+        </div>
+    );
+}
+
 function Playback({
+    bundle,
     start,
     end,
     time,
     playing,
+    speed,
     timeZone,
     onTime,
     onToggle,
+    onSpeed,
 }: {
+    bundle: IncidentBundle;
     start: number;
     end: number;
     time: number;
     playing: boolean;
+    speed: number;
     timeZone: string;
     onTime: (time: number) => void;
     onToggle: () => void;
+    onSpeed: (speed: number) => void;
 }) {
+    function jump(next: number) {
+        onTime(Math.min(end, Math.max(start, next)));
+    }
+
     return (
-        <div className="absolute inset-x-0 bottom-0 z-10 flex items-center gap-3 border-t border-line bg-bg px-3 py-2">
-            <button
-                type="button"
-                onClick={onToggle}
-                className="flex h-8 w-8 shrink-0 items-center justify-center border border-line"
-                aria-label={playing ? "Pause" : "Play"}
-            >
-                {playing ? (
-                    <span className="flex gap-1">
-                        <span className="h-3 w-0.5 bg-fg" />
-                        <span className="h-3 w-0.5 bg-fg" />
+        <div className="absolute inset-x-0 bottom-0 z-10 border-t border-line bg-bg">
+            <div className="flex items-center gap-2 px-3 py-1.5">
+                <button type="button" onClick={() => jump(start)} className="flex h-8 w-8 shrink-0 items-center justify-center border border-line" aria-label="Jump to start">
+                    <span className="flex items-center">
+                        <span className="h-3 w-px bg-fg" />
+                        <span className="border-y-[5px] border-r-[6px] border-y-transparent border-r-fg" />
                     </span>
-                ) : (
-                    <span className="ml-0.5 border-y-[5px] border-l-[7px] border-y-transparent border-l-fg" />
-                )}
-            </button>
-            <input
-                type="range"
-                min={start}
-                max={end}
-                step={1_000}
-                value={Math.min(time, end)}
-                onPointerDown={() => {
-                    if (playing) onToggle();
-                }}
-                onChange={(event) => onTime(Number(event.target.value))}
-                className="min-w-0 flex-1 accent-fg"
-                aria-label="Time"
+                </button>
+                <button type="button" onClick={() => jump(time - 15 * 60_000)} className="flex h-8 w-8 shrink-0 items-center justify-center border border-line" aria-label="Back 15 minutes">
+                    <span className="border-y-[5px] border-r-[7px] border-y-transparent border-r-fg" />
+                </button>
+                <button type="button" onClick={onToggle} className="flex h-8 w-8 shrink-0 items-center justify-center border border-line" aria-label={playing ? "Pause" : "Play"}>
+                    {playing ? (
+                        <span className="flex gap-1">
+                            <span className="h-3 w-0.5 bg-fg" />
+                            <span className="h-3 w-0.5 bg-fg" />
+                        </span>
+                    ) : (
+                        <span className="ml-0.5 border-y-[5px] border-l-[7px] border-y-transparent border-l-fg" />
+                    )}
+                </button>
+                <button type="button" onClick={() => jump(time + 15 * 60_000)} className="flex h-8 w-8 shrink-0 items-center justify-center border border-line" aria-label="Forward 15 minutes">
+                    <span className="border-y-[5px] border-l-[7px] border-y-transparent border-l-fg" />
+                </button>
+                <button type="button" onClick={() => jump(end)} className="flex h-8 w-8 shrink-0 items-center justify-center border border-line" aria-label="Jump to end">
+                    <span className="flex items-center">
+                        <span className="border-y-[5px] border-l-[6px] border-y-transparent border-l-fg" />
+                        <span className="h-3 w-px bg-fg" />
+                    </span>
+                </button>
+                <div className="flex shrink-0 border border-line" role="group" aria-label="Playback speed">
+                    {SPEEDS.map((value) => (
+                        <button
+                            key={value}
+                            type="button"
+                            onClick={() => onSpeed(value)}
+                            className={`px-2 py-1 text-xs ${speed === value ? "bg-fg text-bg" : "text-dim"}`}
+                            title={value === 240 ? "4 incident-hours per second" : `${value} incident-minute${value === 1 ? "" : "s"} per second`}
+                        >
+                            {value === 240 ? "Overview" : `${value}×`}
+                        </button>
+                    ))}
+                </div>
+                <span className="ml-auto shrink-0 text-xs text-fg">{formatWhen(new Date(time).toISOString(), timeZone)}</span>
+            </div>
+            <div className="px-3 pb-1">
+                <input
+                    type="range"
+                    min={start}
+                    max={end}
+                    step={1_000}
+                    value={Math.min(time, end)}
+                    onPointerDown={() => {
+                        if (playing) onToggle();
+                    }}
+                    onChange={(event) => onTime(Number(event.target.value))}
+                    className="block h-6 w-full accent-fg"
+                    aria-label="Time"
+                />
+            </div>
+            <EventStrip
+                bundle={bundle}
+                start={start}
+                end={end}
+                time={time}
+                timeZone={timeZone}
+                playing={playing}
+                onTime={onTime}
+                onToggle={onToggle}
             />
-            <span className="shrink-0 text-xs text-muted">{formatWhen(new Date(time).toISOString(), timeZone)}</span>
         </div>
     );
 }
@@ -668,6 +1012,7 @@ export function Map({ bundle, roads }: MapProps) {
     const [visible, setVisible] = useState(INITIAL_LAYERS);
     const [time, setTime] = useState(() => initialTime(bundle));
     const [playing, setPlaying] = useState(false);
+    const [speed, setSpeed] = useState(15);
     const options = useMemo(() => layersIn(bundle), [bundle]);
     const simulation = useMemo(() => (bundle.exercise ? simulate(bundle.exercise, roads) : null), [bundle.exercise, roads]);
     const layers = useMemo(() => buildLayers(bundle, visible, time, simulation), [bundle, visible, time, simulation]);
@@ -685,17 +1030,17 @@ export function Map({ bundle, roads }: MapProps) {
         let frame = 0;
         let last = performance.now();
         const tick = (now: number) => {
-            const elapsed = now - last;
+            const dt = Math.min(0.25, (now - last) / 1000);
             last = now;
             setTime((current) => {
-                const next = current + ((end - start) * elapsed) / 150_000;
+                const next = current + dt * speed * 60_000;
                 return next >= end ? end : next;
             });
             frame = requestAnimationFrame(tick);
         };
         frame = requestAnimationFrame(tick);
         return () => cancelAnimationFrame(frame);
-    }, [playing, start, end]);
+    }, [playing, speed, end]);
 
     useEffect(() => {
         if (playing && time >= end) setPlaying(false);
@@ -713,6 +1058,21 @@ export function Map({ bundle, roads }: MapProps) {
         if (time >= end - 1000) setTime(start);
         setPlaying(true);
     }
+
+    useEffect(() => {
+        function onKey(event: KeyboardEvent) {
+            if (event.repeat || event.key !== " ") return;
+            const target = event.target;
+            if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
+            if (target instanceof HTMLInputElement && target.type !== "range") return;
+            if (target instanceof HTMLElement && target.isContentEditable) return;
+            if (target instanceof HTMLButtonElement) return;
+            event.preventDefault();
+            togglePlay();
+        }
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [playing, time, start, end]);
 
     const day = new Intl.DateTimeFormat("en-CA", {
         timeZone: bundle.manifest.timezone,
@@ -771,16 +1131,16 @@ export function Map({ bundle, roads }: MapProps) {
             </MapCanvas>
             <LayerToggle options={options} visible={visible} onToggle={toggle} />
             <Playback
+                bundle={bundle}
                 start={start}
                 end={end}
                 time={time}
                 playing={playing}
+                speed={speed}
                 timeZone={bundle.manifest.timezone}
-                onTime={(next) => {
-                    setPlaying(false);
-                    setTime(next);
-                }}
+                onTime={setTime}
                 onToggle={togglePlay}
+                onSpeed={setSpeed}
             />
             {tip && (
                 <div

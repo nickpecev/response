@@ -5,23 +5,54 @@ interface Place {
     lat: number;
 }
 
-interface Link {
-    to: number;
-    meters: number;
+interface Leg {
+    edge: number;
     points: Place[];
+    seconds: number;
 }
 
 export interface RoadRoute {
-    points: Place[];
-    meters: number;
+    head: Place[];
+    headMeters: number;
+    legs: Leg[];
+    tail: Place[];
+    tailMeters: number;
+}
+
+interface CachedRoute {
+    legs: Leg[];
 }
 
 export interface RoadNetwork {
-    nodes: Place[];
-    links: Link[][];
-    component: Int32Array;
-    cache: Map<string, Place[] | null>;
+    count: number;
+    edgeCount: number;
+    lon: Float64Array;
+    lat: Float64Array;
+    from: Int32Array;
+    to: Int32Array;
+    seconds: Float64Array;
+    geomStart: Int32Array;
+    geomEnd: Int32Array;
+    geom: Float64Array;
+    adjStart: Int32Array;
+    adjEdge: Int32Array;
+    grid: Map<string, number[]>;
+    cache: Map<string, CachedRoute | null>;
 }
+
+const CLASS_KMH: Record<string, number> = {
+    motorway: 105,
+    trunk: 80,
+    primary: 65,
+    secondary: 55,
+    tertiary: 45,
+    unclassified: 40,
+    motorway_link: 55,
+    trunk_link: 50,
+    primary_link: 45,
+};
+
+const CELL = 0.01;
 
 function meters(from: Place, to: Place) {
     const radius = 6371000;
@@ -33,72 +64,123 @@ function meters(from: Place, to: Place) {
     return 2 * radius * Math.asin(Math.sqrt(h));
 }
 
-function lineLength(points: Place[]) {
-    let total = 0;
-    for (let i = 1; i < points.length; i++) total += meters(points[i - 1], points[i]);
-    return total;
+function samePlace(a: Place, b: Place) {
+    return Math.abs(a.lon - b.lon) < 1e-6 && Math.abs(a.lat - b.lat) < 1e-6;
 }
 
 export function buildNetwork(graph: RoadGraph): RoadNetwork {
     const count = graph.nodes.length / 2;
-    const nodes: Place[] = [];
+    const edgeCount = graph.edges.length;
+    const lon = new Float64Array(count);
+    const lat = new Float64Array(count);
     for (let i = 0; i < count; i++) {
-        nodes.push({ lon: graph.nodes[i * 2], lat: graph.nodes[i * 2 + 1] });
+        lon[i] = graph.nodes[i * 2];
+        lat[i] = graph.nodes[i * 2 + 1];
     }
 
-    const links: Link[][] = Array.from({ length: count }, () => []);
-    const undirected: number[][] = Array.from({ length: count }, () => []);
-    for (const edge of graph.edges) {
-        const from = edge[0];
-        const to = edge[1];
-        const oneway = edge[4] === 1;
-        const line: Place[] = [];
-        for (let i = edge[5]; i < edge[6]; i += 2) {
-            line.push({ lon: graph.geom[i], lat: graph.geom[i + 1] });
-        }
-        if (line.length < 2) continue;
-        const length = lineLength(line);
-        links[from].push({ to, meters: length, points: line.slice(1) });
-        undirected[from].push(to);
-        undirected[to].push(from);
-        if (!oneway) {
-            const backward: Place[] = [];
-            for (let i = line.length - 2; i >= 0; i--) backward.push(line[i]);
-            links[to].push({ to: from, meters: length, points: backward });
-        }
+    const from = new Int32Array(edgeCount);
+    const to = new Int32Array(edgeCount);
+    const seconds = new Float64Array(edgeCount);
+    const geomStart = new Int32Array(edgeCount);
+    const geomEnd = new Int32Array(edgeCount);
+    const degree = new Int32Array(count + 1);
+    for (let i = 0; i < edgeCount; i++) {
+        const edge = graph.edges[i];
+        from[i] = edge[0];
+        to[i] = edge[1];
+        const kmh = CLASS_KMH[graph.classes[edge[3]]] ?? 40;
+        seconds[i] = edge[2] / ((kmh * 1000) / 3600);
+        geomStart[i] = edge[5];
+        geomEnd[i] = edge[6];
+        degree[edge[0] + 1] += 1;
+        degree[edge[1] + 1] += 1;
+    }
+    for (let i = 1; i <= count; i++) degree[i] += degree[i - 1];
+    const adjStart = Int32Array.from(degree);
+    const adjEdge = new Int32Array(edgeCount * 2);
+    const fill = new Int32Array(count);
+    for (let i = 0; i < edgeCount; i++) {
+        adjEdge[adjStart[from[i]] + fill[from[i]]++] = i;
+        adjEdge[adjStart[to[i]] + fill[to[i]]++] = i;
     }
 
-    const component = new Int32Array(count);
-    component.fill(-1);
-    let componentId = 0;
+    const grid = new Map<string, number[]>();
     for (let i = 0; i < count; i++) {
-        if (component[i] >= 0) continue;
-        const stack = [i];
-        component[i] = componentId;
-        while (stack.length) {
-            const node = stack.pop();
-            if (node === undefined) break;
-            for (const next of undirected[node]) {
-                if (component[next] >= 0) continue;
-                component[next] = componentId;
-                stack.push(next);
-            }
-        }
-        componentId += 1;
+        const key = `${Math.floor(lon[i] / CELL)}:${Math.floor(lat[i] / CELL)}`;
+        const cell = grid.get(key);
+        if (cell) cell.push(i);
+        else grid.set(key, [i]);
     }
 
-    return { nodes, links, component, cache: new Map() };
+    return {
+        count,
+        edgeCount,
+        lon,
+        lat,
+        from,
+        to,
+        seconds,
+        geomStart,
+        geomEnd,
+        geom: Float64Array.from(graph.geom),
+        adjStart,
+        adjEdge,
+        grid,
+        cache: new Map(),
+    };
+}
+
+function inside(lon: number, lat: number, ring: [number, number][]) {
+    let hit = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [xi, yi] = ring[i];
+        const [xj, yj] = ring[j];
+        if (yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) hit = !hit;
+    }
+    return hit;
+}
+
+export function edgesInside(network: RoadNetwork, rings: [number, number][][]) {
+    const blocked = new Uint8Array(network.edgeCount);
+    for (let edge = 0; edge < network.edgeCount; edge++) {
+        const mid = Math.floor((network.geomStart[edge] + network.geomEnd[edge]) / 4) * 2;
+        const lon = network.geom[mid];
+        const lat = network.geom[mid + 1];
+        if (rings.some((ring) => inside(lon, lat, ring))) blocked[edge] = 1;
+    }
+    return blocked;
 }
 
 function nearest(network: RoadNetwork, place: Place) {
-    let best = 0;
-    let bestScore = Infinity;
+    const cx = Math.floor(place.lon / CELL);
+    const cy = Math.floor(place.lat / CELL);
     const cos = Math.cos((place.lat * Math.PI) / 180);
-    for (let i = 0; i < network.nodes.length; i++) {
-        const node = network.nodes[i];
-        const dx = (node.lon - place.lon) * cos;
-        const dy = node.lat - place.lat;
-        const score = dx * dx + dy * dy;
+    let best = -1;
+    let bestScore = Infinity;
+    for (let ring = 0; ring < 25; ring++) {
+        for (let dx = -ring; dx <= ring; dx++) {
+            for (let dy = -ring; dy <= ring; dy++) {
+                if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring) continue;
+                const cell = network.grid.get(`${cx + dx}:${cy + dy}`);
+                if (!cell) continue;
+                for (const node of cell) {
+                    const dLon = (network.lon[node] - place.lon) * cos;
+                    const dLat = network.lat[node] - place.lat;
+                    const score = dLon * dLon + dLat * dLat;
+                    if (score < bestScore) {
+                        bestScore = score;
+                        best = node;
+                    }
+                }
+            }
+        }
+        if (best >= 0 && Math.sqrt(bestScore) * 111000 < ring * CELL * 111000 * 0.85) break;
+    }
+    if (best >= 0) return best;
+    for (let i = 0; i < network.count; i++) {
+        const dLon = (network.lon[i] - place.lon) * cos;
+        const dLat = network.lat[i] - place.lat;
+        const score = dLon * dLon + dLat * dLat;
         if (score < bestScore) {
             bestScore = score;
             best = i;
@@ -148,24 +230,39 @@ function heapPop(dist: number[], node: number[], size: number) {
     return result;
 }
 
-function search(network: RoadNetwork, start: number, goal: number): Place[] | null {
-    if (start === goal) return [network.nodes[start]];
+function geometry(network: RoadNetwork, edge: number, fromNode: number) {
+    const points: Place[] = [];
+    for (let i = network.geomStart[edge]; i < network.geomEnd[edge]; i += 2) {
+        points.push({ lon: network.geom[i], lat: network.geom[i + 1] });
+    }
+    if (fromNode === network.to[edge]) points.reverse();
+    return points;
+}
 
-    const count = network.nodes.length;
-    const cost = new Float64Array(count);
+function search(network: RoadNetwork, start: number, goal: number, blocked: Uint8Array | null): CachedRoute | null {
+    if (start === goal) return { legs: [] };
+    const cost = new Float64Array(network.count);
     cost.fill(Infinity);
-    const cameFrom = new Int32Array(count);
-    const via = new Int32Array(count);
+    const cameFrom = new Int32Array(network.count);
+    const via = new Int32Array(network.count);
     cameFrom.fill(-1);
     via.fill(-1);
-    const settled = new Uint8Array(count);
+    const settled = new Uint8Array(network.count);
     const heapDist: number[] = [];
     const heapNode: number[] = [];
     let heapSize = 0;
-    const goalPlace = network.nodes[goal];
+    const goalLon = network.lon[goal];
+    const goalLat = network.lat[goal];
+
+    const heuristic = (node: number) => {
+        const midLat = ((network.lat[node] + goalLat) / 2) * (Math.PI / 180);
+        const dLon = (network.lon[node] - goalLon) * Math.cos(midLat);
+        const dLat = network.lat[node] - goalLat;
+        return Math.hypot(dLon, dLat) * 111000 / ((105 * 1000) / 3600);
+    };
 
     cost[start] = 0;
-    heapPush(heapDist, heapNode, heapSize, meters(network.nodes[start], goalPlace), start);
+    heapPush(heapDist, heapNode, heapSize, heuristic(start), start);
     heapSize += 1;
 
     while (heapSize > 0) {
@@ -174,93 +271,61 @@ function search(network: RoadNetwork, start: number, goal: number): Place[] | nu
         if (settled[node]) continue;
         settled[node] = 1;
         if (node === goal) {
-            const steps: { node: number; link: number }[] = [];
+            const steps: { node: number; edge: number }[] = [];
             let cursor = goal;
             while (cursor !== start) {
                 const previous = cameFrom[cursor];
                 if (previous < 0) return null;
-                steps.push({ node: previous, link: via[cursor] });
+                steps.push({ node: previous, edge: via[cursor] });
                 cursor = previous;
             }
             steps.reverse();
-            const points = [network.nodes[start]];
+            const legs: Leg[] = [];
             for (const step of steps) {
-                const link = network.links[step.node][step.link];
-                for (const point of link.points) points.push(point);
+                const points = geometry(network, step.edge, step.node);
+                legs.push({ edge: step.edge, points, seconds: network.seconds[step.edge] });
             }
-            return points;
+            return { legs };
         }
 
-        const links = network.links[node];
-        for (let i = 0; i < links.length; i++) {
-            const link = links[i];
-            if (settled[link.to]) continue;
-            const next = cost[node] + link.meters;
-            if (next >= cost[link.to]) continue;
-            cost[link.to] = next;
-            cameFrom[link.to] = node;
-            via[link.to] = i;
-            heapPush(heapDist, heapNode, heapSize, next + meters(network.nodes[link.to], goalPlace), link.to);
+        for (let i = network.adjStart[node]; i < network.adjStart[node + 1]; i++) {
+            const edge = network.adjEdge[i];
+            if (blocked && blocked[edge]) continue;
+            const next = network.from[edge] === node ? network.to[edge] : network.from[edge];
+            if (settled[next]) continue;
+            const nextCost = cost[node] + network.seconds[edge];
+            if (nextCost >= cost[next]) continue;
+            cost[next] = nextCost;
+            cameFrom[next] = node;
+            via[next] = edge;
+            heapPush(heapDist, heapNode, heapSize, nextCost + heuristic(next), next);
             heapSize += 1;
         }
     }
-
     return null;
 }
 
-function closest(network: RoadNetwork, componentId: number, place: Place) {
-    let best = -1;
-    let bestScore = Infinity;
-    const cos = Math.cos((place.lat * Math.PI) / 180);
-    for (let i = 0; i < network.nodes.length; i++) {
-        if (network.component[i] !== componentId) continue;
-        const node = network.nodes[i];
-        const dx = (node.lon - place.lon) * cos;
-        const dy = node.lat - place.lat;
-        const score = dx * dx + dy * dy;
-        if (score < bestScore) {
-            bestScore = score;
-            best = i;
-        }
-    }
-    return best;
-}
-
-function cached(network: RoadNetwork, start: number, goal: number) {
-    const key = `${start}:${goal}`;
-    let middle = network.cache.get(key);
-    if (middle === undefined) {
-        middle = search(network, start, goal);
-        network.cache.set(key, middle);
-    }
-    return middle;
-}
-
-function samePlace(a: Place, b: Place) {
-    return Math.abs(a.lon - b.lon) < 1e-6 && Math.abs(a.lat - b.lat) < 1e-6;
-}
-
-export function roadPath(network: RoadNetwork, from: Place, to: Place): RoadRoute | null {
+export function roadPath(network: RoadNetwork, from: Place, to: Place, blocked: Uint8Array | null, key: string): RoadRoute | null {
     const start = nearest(network, from);
     const goal = nearest(network, to);
-    const points = [from];
-    const append = (route: Place[] | null) => {
-        if (!route) return;
-        for (const point of route) {
-            if (!samePlace(points[points.length - 1], point)) points.push(point);
-        }
-    };
-
-    if (network.component[start] === network.component[goal]) {
-        append(cached(network, start, goal));
-    } else {
-        const exit = closest(network, network.component[start], network.nodes[goal]);
-        const entry = closest(network, network.component[goal], network.nodes[start]);
-        if (exit >= 0) append(cached(network, start, exit));
-        if (entry >= 0) append(cached(network, entry, goal));
+    if (start < 0 || goal < 0) return null;
+    const cacheKey = `${start}:${goal}:${key}`;
+    let cached = network.cache.get(cacheKey);
+    if (cached === undefined) {
+        cached = search(network, start, goal, blocked);
+        network.cache.set(cacheKey, cached);
     }
+    if (!cached) return null;
 
-    if (!samePlace(points[points.length - 1], to)) points.push(to);
-    if (points.length < 2) return null;
-    return { points, meters: lineLength(points) };
+    const startPlace = { lon: network.lon[start], lat: network.lat[start] };
+    const goalPlace = { lon: network.lon[goal], lat: network.lat[goal] };
+    const head = samePlace(from, startPlace) ? [] : [from, startPlace];
+    const tail = samePlace(to, goalPlace) ? [] : [goalPlace, to];
+    return {
+        head,
+        headMeters: head.length ? meters(from, startPlace) : 0,
+        legs: cached.legs,
+        tail,
+        tailMeters: tail.length ? meters(goalPlace, to) : 0,
+    };
 }
