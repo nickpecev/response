@@ -1,0 +1,10 @@
+{
+  "ingestedAt": "2026-10-25T04:32:26.436Z",
+  "warnings": [],
+  "counts": {
+    "timeline": 80,
+    "observations": 365,
+    "assets": 334,
+    "disruptions": 5
+  }
+}

@@ -1,0 +1,1234 @@
+Hurricane Ian
+After-Action Report
+
+Lee County, Florida
+
+August 11, 2023
+Table of Contents
+
+Handling Instructions............................................................................................3
+Acknowledgments ................................................................................................4
+Executive Summary ..............................................................................................5
+
+Observations ............................................................................................................................................. 5
+
+Introduction ...........................................................................................................7
+
+Approach and Methodology ................................................................................................................... 7
+Analysis ...................................................................................................................................................... 7
+
+Incident Overview .................................................................................................8
+
+Event Summary ........................................................................................................................................ 8
+Timeline.................................................................................................................................................... 15
+Hurricane Ian Response by the Numbers........................................................................................... 16
+
+Hurricane Ian Response Analysis ......................................................................17
+Conclusion ...........................................................................................................27
+Appendix: Acronyms ..........................................................................................28
+
+Lee County Hurricane Ian After-Action Report  2
+Handling Instructions
+
+The Lee County Hurricane Ian After-Action Report identifies areas of strength and opportunities for
+improvement based on the lessons learned from Lee County's response to Hurricane Ian. The analysis
+outlined in this report represents identified best practices and areas for improvement.
+
+The information contained in this document is current as of the date of publication, August 11, 2023.
+
+Input for this report was sought from and provided by Lee County personnel, mutual aid responders, as
+well as private sector and non-profit stakeholders who supported emergency response activities.
+
+For more information about this report, please use the following points of contact:
+
+         Lee County Office of Communications and Community Engagement
+         LeeCountyPIO@leegov.com
+         www.leegov.com
+
+         Benjamin Abes
+         Director, Lee County Public Safety
+
+Lee County Hurricane Ian After-Action Report  3
+Acknowledgments
+
+The mission of Lee County Emergency Management, a division of the County's Department of Public
+Safety, is to prepare, safeguard and protect the residents of the County and their property from disaster.
+During emergency events, Lee County Emergency Management is the lead coordinating entity for the
+Lee County Emergency Operations Center to coordinate response among partners.
+
+The response to Hurricane Ian, beginning in September 2022, was complex, dynamic and monumental,
+leveraging County, State, Federal and non-profit personnel and equipment resources to support the
+residents of Lee County. Lee County would like to thank the countless community members, public safety
+professionals, emergency management personnel and volunteers from Florida and across the nation who
+supported Hurricane Ian response and recovery efforts.
+
+The development of the Lee County Hurricane Ian After-Action Report was informed by detailed feedback
+from Lee County personnel as well as municipal, special district, private sector and non-profit partners
+on what went well and where opportunities for improvement exist. Lee County thanks these individuals
+for their participation in this review effort.
+
+Lee County Hurricane Ian After-Action Report  4
+Executive Summary
+
+The Lee County (the County) Hurricane Ian After-Action Report (AAR) is a review of the County's
+preparedness, response and recovery efforts to Hurricane Ian. The scope of this AAR focuses on
+countywide operations and does not cover department-specific operations pertaining to Hurricane Ian.
+Observations and recommendations included in this AAR are intended to contribute to the County's
+preparedness and readiness for future hurricane events.
+
+The AAR is organized by the following sections:
+
+    · Introduction: Purpose, Approach and Methodology
+    · Incident Overview: Event Summary, Event Timeline, Hurricane Ian Response by the Numbers
+    · Hurricane Ian Response Analysis: Observations and Recommendations
+    · Conclusion
+
+The AAR review process addressed the following focus areas with stakeholders:
+
+    · Command and Leadership
+    · Public Information and Warning
+    · Information Technology and Communications
+    · Planning Section
+    · Logistics Section
+    · Operations Section
+    · Staff Support and Wellness
+
+During the review process, it was evident that County personnel, along with local governments, special
+districts, private sector and non-profit partners who supported the County's Emergency Operations
+Center (EOC) efforts, were dedicated to supporting the Lee County community before, during and
+following Hurricane Ian.
+
+This report focuses on broad, policy-level issues or operational problems encountered as a result of the
+impact of Hurricane Ian. Due to the size and scope of the disaster, it is not meant to include all operational
+or departmental challenges and does not document County department-level issues and corrective
+actions taken during or after this event.
+
+Observations
+
+The following are observations of the County's response and recovery actions before, during and after
+Hurricane Ian:
+
+Observation 1: Interagency coordination and communication resulted in the County's ability to respond
+to Hurricane Ian and implement innovative solutions.
+
+Observation 2: Amid an uncertain forecast leading up to landfall, County leadership leveraged pre-
+existing plans to guide critical pre-storm decision-making, issue evacuation orders and open shelters.
+
+Lee County Hurricane Ian After-Action Report  5
+Observation 3: The County, leveraging pre-season preparedness coordination and pre-scripted
+messaging, had a well-established operational rhythm to manage public information during Hurricane Ian.
+
+Observation 4: The County maintained most interoperable communications with partners in the EOC,
+Emergency Dispatch Center, Emergency Information Hotline (EIHL), Government Communications
+Network and in the field during Hurricane Ian.
+
+Observation 5: The County leveraged and augmented pre-existing plans, relied on built organizational
+constructs and implemented lessons learned from previous emergency events to meet the scale and
+severity of Hurricane Ian.
+
+Observation 6: The County identified opportunities to expand and further develop an EOC guide and
+position-specific checklists for personnel, including multijurisdictional, mutual aid, private sector and non-
+profit partners, reporting to the EOC.
+
+Observation 7: The County's debris management operation was equipped with the necessary resources,
+common operating picture and contracts to remove 6.3 million cubic yards of debris in unincorporated
+Lee County.
+
+Observation 8: The County coordinated effectively with non-profit, local, State and Federal partners to
+augment field and EOC activities as well as support Points of Distribution (POD) and Disaster Recovery
+Center (DRC) efforts.
+
+Observation 9: While shelters were successfully supplied and operational for County residents on the
+morning of Tuesday, September 27, the County encountered challenges in managing the expectations
+of some shelter facilities and mobilizing shelter staff.
+
+Observation 10: Staging areas and County property sustained occasional and localized flooding impacts
+and overcrowding.
+
+Observation 11: The National Incident Management System (NIMS) model resulted in span of control
+challenges for EOC operations.
+
+Observation 12: The County leveraged pre-existing staff support and wellness programs and
+partnerships to support County personnel throughout the response to Hurricane Ian.
+
+Observation 13: Mitigation projects throughout the County increased the resiliency of infrastructure and
+expedited initial restoration activities following Hurricane Ian's storm surge and hurricane-force winds.
+
+Observation 14: The County identified opportunities to enhance communication and information flow
+with elected officials visiting the County EOC to strategically leverage intergovernmental support for the
+response.
+
+Lee County Hurricane Ian After-Action Report  6
+Introduction
+
+The purpose of the Lee County Hurricane Ian AAR is to provide a review of the County's preparedness,
+response and recovery actions pertaining to Hurricane Ian, as well as identify strengths and areas for
+improvement. The observations identified in this report are based on information provided by
+stakeholders who supported incident response and recovery efforts. Information collected in this AAR is
+intended to memorialize lessons learned, identify best practices and support the County's readiness for
+future hurricane events.
+
+This report focuses on broad, policy-level issues or operational problems encountered as a result of the
+impact of Hurricane Ian. Due to the size and scope of the disaster, it is not meant to include all operational
+or departmental challenges and does not document County department-level issues and corrective
+actions taken during or after this event.
+
+Approach and Methodology
+
+This AAR was developed in two phases. The first phase was conducted from October to December 2022
+to collect initial data identifying key actions, events and timeline elements. Data collection methods for
+this initial phase included:
+
+    · A document review of County plans, incident action plans (IAP), situation reports, press releases,
+         EOC briefings and forecasts from local and national meteorologists.
+
+    · A series of stakeholder interviews with mutual aid staff and volunteers supporting the County EOC.
+
+The second phase of the AAR was conducted from February to June 2023 to collect data from County
+personnel, elected officials, private sector partners, municipal representatives, special districts and non-
+profit stakeholders through a series of group and one-on-one interviews as well as a document of review
+of operation-specific materials. The following focus areas were addressed in stakeholder interviews:
+
+    · Command and Leadership
+    · Public Information and Warning
+    · Information Technology and Communications
+    · Planning Section
+    · Logistics Section
+    · Operations Section
+    · Staff Support and Wellness
+
+Analysis
+
+Observations and recommendations within this AAR are based on qualitative information collected from
+stakeholder interviews and document reviews during the course of both phases.
+
+Lee County Hurricane Ian After-Action Report  7
+Incident Overview
+
+Event Summary
+
+As of August 2023, Hurricane Ian is ranked as the third costliest tropical system to make landfall in the
+United States (U.S.), behind only Hurricane Katrina (2005) and Hurricane Harvey (2017). Hurricane Ian
+was the ninth named storm, the fourth hurricane and the first Category 5 hurricane of the 2022 Atlantic
+hurricane season.
+
+PRE-LANDFALL
+
+Hurricane Ian developed as a tropical wave off the
+coast of western Africa on Monday, September 19,
+2022, and continued to track west toward the U.S.
+On the morning of Friday, September 23, the tropical
+wave formed into Topical Depression Nine which
+then strengthened into Tropical Storm Ian, with
+sustained winds of 40 miles per hour (mph). The
+County EOC has three activation levels ranging from
+Level III (monitoring) to Level I (full activation). That
+same day, initial hurricane preparations began in the
+County and the EOC opened at a Level II partial
+activation.
+
+Between Friday, September 23, and Sunday,
+
+September 25, then-Tropical Storm Ian's track was          Figure 1: NWS Advisory 2; Source NWS
+uncertain, making it difficult to determine where
+
+landfall would take place on Florida's west coast.
+
+Forecasts showed landfall between Naples (just south of the County) and Apalachicola (north of the
+
+County on the Panhandle). The uncertainty around the location and timing of landfall encouraged the
+
+County to monitor the system closely with partners at the National Weather Service (NWS) and National
+
+                                        Hurricane Center (NHC).
+
+Figure 2: NWS Advisory 14; Source: NWS  On Monday, September 26, the NHC upgraded Tropical Storm
+                                        Ian to Hurricane Ian with a forecast tracking toward Tampa Bay
+                                        (north of the County). That same morning, the County declared
+                                        its initial State of Local Emergency (SOLE) and announced that
+                                        the EOC would increase to a Level I full activation on Tuesday,
+                                        September 27. The County also suspended tolls on bridges
+                                        until further notice and announced County offices would close
+                                        on Tuesday, September 27, and Wednesday, September 28.
+                                        On a briefing with the NWS ­ Tampa Bay at 7:00 p.m. on
+                                        Monday, September 26, meteorologists presented peak storm
+                                        surge forecasts impacting Tampa Bay with 10 to 15 feet on the
+                                        barrier island of Pinellas County and 15 feet of water in Tampa
+
+              Lee County Hurricane Ian After-Action Report                                       8
+Bay. In red text, meteorologists stressed: "We have to consider this one." Peak surge forecasts for Lee
+County remained at 4 to 7 feet.
+
+NWS issued a Tropical Storm Warning from Englewood
+south to Flamingo, a Storm Surge Warning from the
+Anclote River south to Flamingo and a Hurricane Watch
+from Englewood south to Bonita Beach on Monday
+evening, September 26; all advisories included the
+County. Hurricane Ian was forecast to undergo rapid
+intensification overnight which is defined by the NHC as
+an increase of maximum sustained winds of at least 35
+mph during a 24-hour period, and strengthen into a
+major hurricane before daylight on Tuesday,
+September 27.
+
+Early in the day on Tuesday, September 27, Hurricane
+
+Ian made landfall as a Category 3 Hurricane near La
+
+Coloma, Cuba, with sustained winds near 125 mph. As       Figure 3: NWS Advisory 15; Source: NWS
+
+Hurricane Ian passed over the island of Cuba and
+
+entered the Gulf of Mexico, the storm resumed rapid intensification. Hurricane Ian's forecast tracked
+
+toward the southeast and, by 5:00 p.m., Hurricane Warnings extended from the Anclote River to
+
+Chokoloskee, a nearly 200-mile section of the southwestern Florida coast. Storm Surge Warnings
+
+covered the area from the Suwannee River to Flamingo, a more than 300-mile section of the western
+
+Florida coast.
+
+At 7:00 a.m. on Tuesday, September 27, the County
+
+opened 11 shelters, 10 for general population and
+
+one for the special medical needs population, and
+
+issued an initial round of mandatory evacuation
+
+orders for Zone A and portions of Zone B, along with
+
+individuals throughout the County in mobile and
+
+manufactured homes. Hurricane Ian's forecast had
+
+shifted farther to the southeast. This forecast
+
+prompted additional evacuation orders in the
+
+County at 8:45 a.m. to include all of Zone A and Zone
+
+B. The County reported anticipated storm surge to
+
+be between 5 and 10 feet. Additionally, the County
+
+opened five more general population shelters,
+
+bringing the total number of open general
+
+population shelters to 15. To assist with evacuation,
+
+Lee County Transit (LeeTran) used existing plans to
+
+provide transportation resources for evacuations          Figure 4: Hurricane Ian Mandatory Evacuation Zones;
+
+and shelter drop-offs at bus stops countywide and         Source: Lee County
+
+individually for those who requested support. At 1:45 p.m., the County expanded the mandatory
+
+evacuation order for a third time, to include all of Zone A and Zone B, along with portions of Zone C in
+
+North Cape Coral and North Fort Myers, west of Interstate 75. At 3:00 p.m., the Florida Division of
+
+Emergency Management (FDEM) arrived at the County EOC.
+
+                Lee County Hurricane Ian After-Action Report                                                   9
+Storm surge risks increased, with forecast surge between 8 and 12 feet. Additionally, the 11:00 a.m. NHC
+forecast predicted landfall would occur around 8:00 p.m. on Wednesday, September 28. County officials
+emphasized to the public to not wait until the last minute to evacuate to decrease the risk of heavy traffic.
+Then, the 5:00 p.m. update from the NHC forecasted Hurricane Ian's landfall even farther south, near
+Englewood, around 2:00 p.m. on Wednesday, September 28. The NHC advised that Hurricane Ian would
+make landfall as an extremely dangerous major hurricane. Given the low number of people arriving at
+public shelters, County leaders contacted law enforcement, fire and local government officials on barrier
+islands to ask that they drive their communities to survey the progress of evacuations and encourage
+those left to reconsider evacuating.
+
+At 6:30 p.m. on Tuesday, September 27, the County sent an emergency notification text requesting
+residents to seek shelter or shelter-in-place by 8:00 p.m. Into the evening hours of Tuesday, September
+27, weather conditions in the County began to deteriorate, with reports of gusty winds and tornadoes, as
+the first bands of Hurricane Ian made their way on shore.
+
+A representative from the Federal Emergency Management Agency (FEMA) arrived at the EOC late in
+the evening of Tuesday, September 27.
+
+LANDFALL
+
+On the morning of Wednesday, September 28, Hurricane         Figure 5: Satellite image of Hurricane Ian over
+Ian had strengthened into a Category 5 hurricane, with         Florida on September 28; Source: National
+sustained winds of 160 mph. Storm surge was now                 Oceanic and Atmospheric Administration
+forecast to be anywhere from 12 to 16 feet above ground
+level in Florida's west coastal area from Englewood to
+Bonita Beach. Around 9:40 a.m., the County released a
+shelter-in-place alert via AlertLee, the County's
+Emergency Mass Notification System. By 11:00 a.m., the
+storm surge forecast increased between 12 and 18 feet
+for the same geographic area. During this time, the County
+suspended law enforcement, fire and emergency medical
+services (EMS) responses. At 3:05 p.m., Hurricane Ian
+made landfall on Cayo Costa, Florida, a barrier island in
+Lee County. An hour and a half later, Ian made a second
+landfall, this time on mainland Florida near Pirate Harbor,
+just north of the Lee/Charlotte County line, with sustained
+winds of 145 mph. The County distributed a text message
+at 4:30 p.m. urging residents with water inundating their
+homes to go to the highest level possible.
+
+By 5:00 p.m., the NHC indicated storm surge levels would range from 12 to 18 feet above ground level
+between Englewood and Bonita Beach. The County enacted a curfew shortly after this at 6:00 p.m. in
+response to reports of looting and due to the uncertainty of infrastructure conditions. At that time, the
+curfew was put in place until further notice. County officials indicated that the earliest first responders
+and public works teams could begin thorough damage assessments would be 5:00 a.m. on Thursday,
+September 29.
+
+          Lee County Hurricane Ian After-Action Report                                                        10
+During the County's post-storm address in the early evening hours of Wednesday, September 28, County
+officials fielded questions from local media, noting that less than 10% of shelter capacity was occupied
+and individuals should go to shelters if needed.
+
+POST LANDFALL
+
+The County initiated Urban Search and Rescue (USAR)       Post-Landfall EOC Objectives:
+missions in the early hours of Thursday, September 29.
+The County reported first responders and USAR teams       · Continuing Search and Rescue
+were responding as rapidly as possible to Emergency            operations
+Dispatch Center calls. USAR resources began to arrive
+from across the State of Florida, including seven         · Continuing damage assessment
+helicopters made available by Miami-Dade County to             and infrastructure restoration
+support search and rescue missions.
+                                                          · Providing resources and support
+                                                               as needed throughout the
+                                                               operational period
+
+The County also conducted initial damage assessments of   · Continuing sheltering operations
+
+Hurricane Ian's impact on infrastructure throughout the · Stabilizing healthcare
+
+County including the County's roads and 435 traffic       infrastructure
+
+signals. 98% of the County was without electricity. Both  · Coordinating the dissemination of
+
+the Sanibel Causeway and roadway through Matlacha         public information
+
+were reported to be impassable, along with dozens of
+
+other roadways across the County. Numerous structures
+
+were reported demolished in the City of Sanibel, Pine
+
+Island, Captiva and the Town of Fort Myers Beach. Mobile homes in North Cape Coral were reported as
+
+destroyed.
+
+The County began working with the Florida State National Guard and local municipalities to mobilize POD
+for food, water and other basic commodities. All 15 general population shelters in the County remained
+open and saw increased occupancy as the day progressed. The curfew remained in effect throughout
+the day.
+
+                                             In the first 36 hours after Hurricane Ian's landfall, first responders
+
+                                             continued to respond to the pending 752 fire and EMS calls
+
+                                             received during the storm and consolidated the list down to 26
+
+                                             outstanding calls due to lack of access. These calls were
+
+                                             combined with incoming Emergency Dispatch Center calls and
+
+                                             reprioritized on the morning of Friday, September 30. Search and
+
+                                             rescue efforts continued throughout the County, with the majority
+
+                                             of missions occurring on barrier islands. Traffic throughout the
+
+                                             County on Friday, September 30, hindered response efforts,
+
+                                             prompting the County to issue a press release encouraging
+
+                                             residents to stay off roadways.
+
+Figure 6: Image of a portion of the Sanibel  The U.S. Coast Guard (USCG) organized and deployed a ferry
+Causeway showing the impact of Hurricane
+
+Ian; Source: National Oceanic and            operation to evacuate the City of Sanibel's residents to the
+
+Atmospheric Administration Remote Sensing mainland. Search and rescue responders at the Town of Fort
+
+            Division                         Myers Beach assisted in evacuations from Estero Island, where
+
+residents were asked to walk to the Publix for assistance in evacuating. The same occurred on Matlacha
+
+                      Lee County Hurricane Ian After-Action Report                             11
+and Pine Island. LeeTran provided shuttle service from the mainland drop-off locations near these islands
+to area shelters for those who required transport.
+
+The County Department of Transportation (DOT) partnered with the Florida Department of Transportation
+(FDOT) and continued an assessment of
+roadways and bridges. The Sanibel
+Causeway, New Pass, Big Carlos Pass
+and Big Hickory Pass bridges were all
+considered nonoperational, along with
+three bridges in Matlacha.
+
+Numerous supporting agencies and         Figure 7: Image of Matlacha Bridge on September 30, 2023; Source:
+individuals arrived in the County on                       Agence France-Presse via Getty Images
+Friday, September 30, including
+additional staff from FEMA. 15 shelters
+remained operational on the morning of
+Friday, September 30, with the initial
+wave of shelter consolidation beginning
+that afternoon.
+
+EXTENDED RESPONSE
+AND INITIAL RECOVERY
+
+For the next week, the County continued response efforts       Response and Initial Recovery
+and began initial recovery efforts. In addition to continuing  EOC Objectives:
+to coordinate operations, the County EOC also received
+elected official visits, which were coordinated through        · Provide for the needs and safety
+EOC staff and County leadership.                                    of the responders
+
+Urban Search and Rescue and Life Safety
+
+From Thursday morning, September 29, to Monday,                · Provide for the needs and safety
+October 3, two Type 1 USAR teams partnered with local               of the public
+teams for seven total teams conducting search and rescue
+                                                               · Search and rescue
+
+efforts. From Tuesday, October 4, to Wednesday, October        · Utility and Infrastructure
+5, 15 USAR teams were operational throughout the                    restoration
+
+County. Starting on Thursday, October 6, 12 USAR teams         · Ensuring adequate mission and
+
+were available to continue search and rescue operations        resource management
+
+across the County. Unincorporated Lee County, the Town
+
+of Fort Myers Beach, City of Bonita Springs and the City
+
+of Sanibel remained under curfews. Access through Matlacha was restored and traffic was able to resume
+
+on Pine Island on Wednesday, October 5, however, six other bridges remained inoperable during this
+
+time.
+
+Infrastructure
+
+Between Saturday, October 1, and Friday, October 7, teams from Florida Power & Light (FP&L), Lee
+County Electric Cooperative (LCEC), County Utilities, County DOT, County Solid Waste and County
+Natural Resources worked to restore the County's infrastructure.
+
+                Lee County Hurricane Ian After-Action Report                                                12
+Date       Percentage of FP&L    Percentage of LCEC
+           Customers with Power  Customers with Power
+
+October 2  51%                                           --
+
+October 3  63%                                           21%
+
+October 4  78%                                           30%
+
+October 5  86%                                           30%
+
+October 6  --                                            --
+
+October 7  97%                                           60%
+
+By Sunday, October 2, Lee County Utilities and Bonita Spring Utilities had restored water service to all
+customers with isolated boil water notices. By Monday, October 3, Cape Coral Utilities had restored water
+service to all customers, with isolated boil water notices. By the end of the week, City of Fort Myers
+Utilities had restored 90% of water service to customers. Portions of the water infrastructure on Fort
+Myers Beach were destroyed during landfall when homes were washed away. Restoration efforts on Fort
+Myers Beach would take much longer due to these impacts.
+
+During the first week of October, County DOT worked to assess and restore traffic signals countywide.
+On Sunday, October 2, more than half the traffic signals in the County were non-operational which was
+attributed to power outages. By Tuesday, October 4, 40% of the signals were operational and by the end
+of the week, 69% of the traffic signals were operational.
+
+Debris management, led by County Solid Waste, began on both land and waterways during the first week
+of October. Hurricane Ian resulted in more than 12 million cubic yards of debris, including 6.3 million
+cubic yards impacting unincorporated Lee County and the surrounding waterways impeding access to
+both land and marine transportation as well as access to buildings and residences. In response to the
+magnitude of debris, the County opened 33 debris management sites and re-opened the Gulf Coast
+Landfill to remove and process debris from local and state collections. Additionally, Solid Waste launched
+a campaign to educate and enlist the help of residents and business owners in the County to collect and
+place debris accumulated on their properties in a FEMA-compliant manner. On Thursday, October 6,
+President Biden amended declaration DR4673 to cover 100% of eligible debris removal and protective
+measures activities for an additional 30-day period.
+
+Hurricane Ian also changed the topography of intercoastal waterways. Lee County Natural Resources
+coordinated with the USCG to clear navigational channels and managed barge operations to help the
+facilitation of moving debris as well as shuttling vehicles and resources to the barrier islands.
+
+Mass Care
+
+The County continued to operate and coordinate shelters and POD sites to support residents during the
+first week of October with the American Red Cross assuming shelter operations on Monday, October 3.
+The Salvation Army continued feeding operations at nine sites throughout the County. Additionally, the
+
+           Lee County Hurricane Ian After-Action Report       13
+first DRC opened in the County on Tuesday, October 4, to support recovery activities. All school shelters
+were closed by Saturday, October 8. All non-school shelters were closed by Friday, October 21.
+
+Date          Number of      Shelter Census  Number of PODs  Number of
+              General                        Open            Individuals
+              Population                                     Served at PODs
+              Shelters Open
+
+September 28  15             6,039           --              --
+
+September 29  15             1,688           --              --
+
+September 30  15             1,727           --              --
+
+October 1     7              1,712           8               48,536
+
+October 2     4              1,569           8               40,513
+
+October 3     4              1,686           8               32,489
+
+October 4     4              1,378           8               29,921
+
+October 5     4              1,296           8               23,192
+
+October 6     4              946             9               21,208
+
+October 7     3              878             9               14,052
+
+During the first week of October, residents in affected areas such as the Town of Fort Myers Beach
+remained under a mandatory evacuation notice. To help support these residents, the National Guard
+continued to offer transport for those wishing to evacuate the island, supported by LeeTran shuttle
+services to open shelters. The Air Operations Branch continued to evacuate individuals off of the islands
+as necessary. Additionally, LeeTran expanded its services to include limited, fixed-route offerings.
+
+Damage Assessment
+
+Damage assessment continued in Lee County, with 24,585 damaged residential structures and 4,690
+commercial structures reporting damage. Property loss was estimated at approximately $3.22 billion. The
+USCG completed its waterway assessment on Friday, October 7.
+
+              Lee County Hurricane Ian After-Action Report                   14
+Timeline
+
+September 23, 2022
+
+Tropical Depression Nine forms in the southern                  September 23, 2022
+Caribbean.
+
+September 25, 2022                                              Tropical Depression Nine strengthens into Tropical Storm
+                                                                                      Ian. Lee County EOC activates to Level II
+
+Initial Tropical Storm Watch issued for Southwest               September 26, 2022
+Florida, including Lee County at 11:00 p.m.
+
+September 26, 2022                                              Lee County issues State of Local Emergency.
+
+Hurricane Ian's track shifts, Tropical Storm Warning issued at  September 27, 2022
+5:00 p.m.
+
+                                                                Hurricane Ian's track shifts further southeast.
+
+September 27, 2022
+
+Lee County opens 15 emergency shelters and one special medical                            September 28, 2022
+needs shelter. Evacuation orders issued for Zones A, B and
+portions of C.                                                  Initial bands from Hurricane Ian prompt Lee County to
+                                                                              suspend emergency services at 10:45 a.m.
+September 28, 2022
+
+Hurricane Ian makes landfall on Cayo Costa at 3:05 p.m.         September 29, 2022
+with sustained winds of 145 mph.
+
+                                                                Initial Search and rescue efforts begin at approximately 2:00 a.m.
+
+September 29, 2022
+
+Sanibel Causeway and other local bridges are assessed                                                    September 30, 2022
+as severely damaged. 98% of Lee County is without
+power.                                                          First responders consolidated and responded to all but 26 9-1-1 calls
+                                                                                                                in the first 24 hours of response.
+September 30, 2022
+
+Search and rescue and evacuation continue on                                                                  October 1, 2022
+Sanibel Island and the Town of Fort Myers Beach.
+FEMA arrives to support response.                               An extended section of Interstate 75 north of Lee County is deemed
+                                                                                            impassable and re-routed through the County.
+October 1, 2022
+
+8 Points of Distribution open to distribute supplies,             October 2, 2022
+food and water with 48,536 individuals served.
+
+October 2, 2022                                                 40,513 individuals are served at Points of Distribution.
+
+Lee County further consolidates shelters to expedite              October 4, 2022
+the return of facilities back to the School District.
+
+October 5, 2022                                                 Disaster Recovery Center 1 opens.
+
+Southwest Florida International Airport resumes limited           October 6, 2022
+operations.
+
+October 7, 2022                                                      President Biden amends DR4673 to cover 100% of
+                                                                eligible debris removal and protective measures for the
+U.S. Coast Guard completes its waterway assessment. Lee
+County begins the transition from disaster response to                                                           following 30 days.
+recovery.
+
+                    Lee County Hurricane Ian After-Action Report                                                                                    15
+Hurricane Ian Response by the Numbers
+
+09/26/2022                                                09/28/2022
+
+State of Local Emergency Declared                         Hurricane Ian Made Landfall
+
+              Category               15 feet                                           161
+
+       5                             Storm Surge                                       MPH Winds
+
+43                                   65                           15
+
+AlertLee                             Days of EOC Level 1          Urban Search & Rescue
+Notifications Sent                   Activation                   Teams Deployed
+
+        5,076                                              910
+
+                   Homes Destroyed                            Businesses with Major Damage
+
+284                                                       6.3 Million Cubic Yards of Debris in
+
+Businesses Destroyed                                      Unincorporated Areas
+
+       $112                                               1,851
+
+                 Billion in Damages                       Businesses with Minor Damage
+
+451,869                              15                                  1
+
+People Ordered to Evacuate           General Population Shelters         Special Medical
+                                                                         Needs Shelter
+
+240                                  5,954
+
+Pets Sheltered                       Total General Population Sheltered
+
+2,200                                                             900
+
+Resource Requests Received at the County                          Resource Requests Routed to the State
+
+                                     Lee County Hurricane Ian After-Action Report                        16
+Hurricane Ian Response Analysis
+
+The following observations identify and describe strengths and areas of improvement pertaining to Lee
+County's Hurricane Ian preparedness, response and recovery efforts.
+
+Observation 1: Interagency coordination and communication resulted in the County's ability
+to respond to Hurricane Ian and implement innovative solutions.
+
+Stakeholders observed that the level of coordination both in the EOC and the field among County
+departments and County leadership contributed to the success of response and initial recovery efforts.
+The County implemented innovative solutions to novel hurricane impacts in the field that were not
+addressed in prior planning efforts. For example, Hurricane Ian changed the topography of the waterways
+resulting in limited access to the barrier islands as bridges were either destroyed or impassable. The
+County, in coordination with State and Federal partners, assembled a task force to address remapping
+the waterway as well as arrange for the eventual barging operation to transport vehicles and fuel from
+the mainland to the barrier islands, with the first barge operating on Monday, October 3.
+
+Additionally, following Hurricane Irma, the County memorialized lessons learned in an AAR and identified
+action items to foster greater resiliency and preparedness in advance of future hurricanes, including
+Hurricane Ian. Numerous lessons learned from Hurricane Irma led to process improvements, resulting in
+a faster and more effective response to Hurricane Ian. This included the use of multidisciplinary teams
+across the County, including Emergency Role Program (E-Role) staffing, to solve new problems that arose
+after the storm's impact.
+
+Observation 2: Amid an uncertain forecast leading up to landfall, County leadership
+leveraged pre-existing plans to guide critical pre-storm decision-making, issue evacuation
+orders and open shelters.
+
+In advance of Hurricane Ian, County leadership navigated and balanced the uncertainty of Hurricane Ian's
+
+track with the critical need for decision-making regarding evacuation orders and opening shelters. The
+
+County activated the EOC on Friday, September 23, to monitor the storm and initiate key preparedness
+
+activities to stage resources and harden facilities. These
+
+preparedness activities were informed by the County's
+
+Time Delineated Schedule (TDS) which notes when             Time Delineated Schedule
+decisions need to be made and when resources need to
+
+be deployed for lines of effort (e.g., sheltering) to       The TDS, updated annually, outlines
+operationalize leading up to landfall. Following the        the timing of countywide decisions and
+Governor's State of Emergency declaration and when          operations before, during, and after a
+
+Hurricane Ian started to track toward Tampa Bay on hurricane.
+
+Monday, September 26, the County declared a SOLE
+
+enabling emergency authorities and procurement policies
+
+countywide.
+
+Between the evening of Monday, September 26, and the morning of Tuesday, September 27, Hurricane
+Ian was tracking more toward the County with an anticipated landfall of Wednesday, September 28,
+prompting evacuation orders on the morning of Tuesday, September 27. While the short timeframe
+between the evacuation orders and landfall was scrutinized, the timing of the evacuation orders aligned
+
+             Lee County Hurricane Ian After-Action Report                                           17
+with the County's pre-existing plans. The County was able to successfully open shelters on Tuesday,
+September 27, to accommodate more than 34,000 individuals. On Tuesday, September 27, shelters were
+at 18.4% capacity with ample availability to support the community. Additionally, there were minimal traffic
+issues noted and the County maintained capacity among public and private transportation resources to
+transport people to shelters if necessary.
+
+· Recommendation: The County should continue to emphasize preparedness actions, such as sharing
+    talking points in coordination with the local media and actions that the public can take prior to an
+    evacuation order (e.g., boarding up windows, gathering shelter in place supplies, packing a go-bag)
+    that can be shared with the public once a hurricane is forecasted to impact Southwest Florida.
+
+· Recommendation: The County should consider providing communication about the timing and
+    thresholds that would result in a potential evacuation order during the runup to a storm to manage
+    the expectations of the public.
+
+Observation 3: The County, leveraging pre-season preparedness coordination and pre-
+scripted messaging, had a well-established operational rhythm to manage public
+information during Hurricane Ian.
+
+Prior to Hurricane Ian, the County convened public information officers (PIO) and JIC partners to conduct
+pre-season hurricane preparedness messaging, identify communication platform redundancies in the
+event of power or telecommunication outages, align department-specific messaging and develop pre-
+scripted messaging to expedite the external communications approval process. This coordination
+enabled the County to continue public messaging throughout Hurricane Ian amid the storm's impact on
+the region's power and telecommunications infrastructure.
+
+During the Hurricane Ian response, the County used a diverse set of communication platforms and
+provided messaging in English, Spanish and Creole. The County leveraged automated systems including
+Integrated Public Alert & Warning System (IPAWS), AlertLee and Lee Prepares. While each system
+delivered pertinent information to the public, there were challenges resulting in alert fatigue. The IPAWS
+system is used by County, State and Federal partners to push information countywide. Similarly, AlertLee
+can transmit notifications from the County to all subscribers and can send localized messages from
+municipalities. As a result, County residents received an increased amount of messaging from Federal,
+State and local sources and, at times, multiple iterations of the same message.
+
+In addition to the automated systems, the County used social media platforms and the County's website
+to post statements, press releases and press conferences. The County leveraged Facebook Live from
+the County EOC to interact directly with the public and provide media an opportunity to access County
+spokespersons in person and virtually. Additionally, the County pre-scripted and planned billboard
+messaging along roadways throughout the County to amplify County messaging to the public.
+
+The volume of information produced by the large scale of Hurricane Ian required the County to surge JIC
+staff. The County was able to meet this demand through establishing a virtual JIC, leveraging pre-
+established relationships from pre-season coordination, incorporating mutual aid communications staff
+and utilizing an out-of-state contract. The out-of-state contract proved to be an innovative resource to
+monitor national media and bi-directional communication occurring on the County's social media
+platforms. Additionally, the County quelled rumors and managed misinformation. While the JIC had a well-
+established operational rhythm to manage public information and monitoring, there are opportunities to
+further strengthen coordination within the EOC and to amplify operational information to the public.
+
+Lee County Hurricane Ian After-Action Report  18
+· Recommendation: The County should consider convening policy meetings with State and Federal
+    partners to discuss strategies to consolidate messaging cadence and mitigate alert fatigue in both
+    incorporated and unincorporated areas during emergency events.
+
+· Recommendation: The County should consider strengthening coordination within the EOC to identify
+    operational developments that can be amplified to the public.
+
+· Recommendation: The EOC should consider reevaluating the process of identifying information that
+    needs to be shared with the public, including ensuring complete information is available to the JIC
+    when the request is made.
+
+Observation 4: The County maintained most interoperable communications with partners in
+the EOC, Emergency Dispatch Center, EIHL, Government Communications Network and in
+the field during Hurricane Ian.
+
+During and post-landfall, the County EOC along with the Emergency Dispatch Center and EIHL
+maintained interoperable communication capability. The County was able to maintain communications in
+the EOC providing phone, internet and radio capabilities. However, there were periods when cell-on-
+wheels (COW) were required to augment cellular vendor outages at the EOC. As a result, the County
+identified opportunities to upgrade EOC wireless and network hardware capabilities to support the
+increased volume of devices utilized for a Level I EOC activation.
+
+Similar to the EOC, the Emergency Dispatch Center maintained communications infrastructure. The
+Emergency Dispatch Center, prior to Hurricane Ian, also conducted a review of activation checklists,
+surge staffing capabilities and updated scripts for use during hurricanes. As a result, both the Emergency
+Dispatch Center and EIHL were able to intake the large volume of calls from the public during Hurricane
+Ian, including requests for welfare checks. At landfall and for the next month, EIHL staff had effectively
+answered and connected 26,289 calls. Following Hurricane Ian, the County identified a need to further
+develop a strategy to compile and consolidate inbound welfare check requests made through the
+Emergency Dispatch Center, EIHL and radios.
+
+To maintain connectivity in the field, the County leveraged the use of radios, mutual aid and donated
+equipment such as Starlink and COW resources. Prior to Hurricane Ian, in August 2022, the County
+sustained fire damage to a coastal public safety radio tower site, but was still able to maintain coverage
+on the islands with the remaining radio towers. While Starlink and COWs did not provide full redundancy,
+especially on the barrier islands, these resources did provide the County with the capability to
+communicate with partners outside the EOC.
+
+· Recommendation: The County should continue to assess and upgrade wireless and network
+    hardware equipment in the EOC; integrate the use of Starlink and COW resources; and coordinate
+    with cellular vendors to ensure the maintenance of cellular infrastructure in the EOC.
+
+· Recommendation: The County should consider exploring methods to compile and consolidate
+    inbound welfare check requests in an automated manner that can be accessed by the County's law
+    enforcement, Emergency Dispatch Center and EIHL, as well as the fire districts.
+
+Lee County Hurricane Ian After-Action Report  19
+Observation 5: The County leveraged and augmented pre-existing plans, relied on built
+organizational constructs and implemented lessons learned from previous emergency
+events to meet the scale and severity of Hurricane Ian.
+
+The County EOC leveraged pre-existing plans and established partnerships as well as incorporated
+lessons learned from previous emergencies to respond to Hurricane Ian. The County's Comprehensive
+Emergency Management Plan (CEMP) provided tools for the EOC to establish a consistent battle rhythm
+of EOC meetings and operational period reporting. Despite the available tools in the CEMP, the magnitude
+of Hurricane Ian required the EOC to augment the meeting schedule and reporting strategy with a
+standard operating guide (SOG) and standard operating procedure (SOP) to maintain situational
+awareness of all response activities.
+
+The TDS was leveraged pre-landfall to ensure that the County EOC had the necessary resources for a
+Level I activation in which hundreds of personnel including local, State and Federal partners were
+anticipated to report to the EOC. The County activated existing feeding contracts to ensure the EOC was
+equipped with enough meals; activated an existing janitorial contract; submitted requests to the State for
+supplemental bathrooms, showers and laundry equipment; and implemented a new EOC badging system.
+Additionally, the TDS informed the timeframe needed to prepare County buildings, activate operational
+contracts, submit resource requests for known needs (e.g., Incident Management Teams [IMT]) and
+deploy resources to shelter site locations.
+
+The EOC also leveraged staffing plans and protocols to inform pre- and post-landfall activities during
+Hurricane Ian. Field operations were organized along pre-established geo-districts to both streamline
+communications and evaluate resource needs at the field level prior to escalating to the EOC. Additionally,
+lessons learned from previous emergencies, including COVID-19 and Hurricane Irma, informed an
+increase in supply caches and more effective use of County property for response activities.
+
+The magnitude of Hurricane Ian posed challenges to the County's emergency resource request and
+procurement process (refer to Figure 8) due to a large volume of inbound resource requests and limited
+resource availability. For example, the County's WebEOC platform was operating at a slower pace
+resulting in partners attempting to source resource needs through alternative methods. As a result, the
+EOC encountered challenges in maintaining full visibility into incoming and deployed mutual aid,
+commodities and equipment throughout the County. Additionally, Hurricane Ian's degradation of
+telecommunications and power infrastructure limited non-County partners' access to WebEOC, resulting
+in the County assuming the interim responsibility of procuring resources. However, as the response
+shifted to initial recovery efforts, coordination challenges occurred in determining which party was
+responsible for the ultimate payment of the resource. Despite these challenges, the County received
+2,200 resource requests, filled 1,300 and rerouted the remaining 900 to FDEM.
+
+Lee County Hurricane Ian After-Action Report  20
+                                         Figure 8: Lee County Resource Request & Procurement Process
+
+· Recommendation: The County should consider incorporating lessons learned from Hurricane Ian
+    regarding establishing and maintaining an EOC schedule and reporting structure into future CEMP,
+    SOG and SOP planning.
+
+· Recommendation: The County should consider upgrading the badging system capabilities to link to
+    both EOC seats and individuals to track equipment provided as well as manage the overall use of the
+    badges.
+
+· Recommendation: The County should consider incorporating lessons learned from Hurricane Ian to
+    strengthen the emergency resource request and procurement process. Additionally, the County
+    should consider establishing a policy on the triggers and circumstances under which normal
+    procurement processes are allowed and when requests should be routed through the EOC.
+
+· Recommendation: The County should consider convening a policy meeting with non-County
+    partners to establish a mutual understanding of non-County partner emergency purchasing
+    responsibilities for resources requested through the County's WebEOC platform.
+
+· Recommendation: The County should consider conducting a countywide inventory resource
+    assessment during normal operations to inform current capabilities as well as inform the development
+
+Lee County Hurricane Ian After-Action Report  21
+of pre-scripted mission requests. Additionally, the County should consider reevaluating WebEOC and
+find opportunities to provide increased performance of the system.
+
+Observation 6: The County identified opportunities to expand and further develop an EOC
+guide and position-specific checklists for personnel, including multijurisdictional, mutual
+aid, private sector and non-profit partners, reporting to the EOC.
+
+Hurricane Ian was a large-scale activation requiring representation from County, State, Federal,
+municipal, special district, mutual aid, private sector and non-profit stakeholders. As a result, not all
+individuals reporting to the County EOC were aware of Lee County's structure, laws and policies. For
+example, out-of-state mutual aid working in the field and EOC may have not known the difference between
+incorporated and unincorporated areas. Additionally, while individuals may have known their general
+roles and responsibilities of where they would be supporting operations, they did not always have full
+visibility into their specific job duties.
+
+· Recommendation: The County should consider coordinating with all EOC sections as well as County
+    leadership to develop checklists or job aids for County personnel, multijurisdictional, private sector
+    and non-profit partners. This would allow individuals who are familiar with the County EOC to have a
+    quick review tool for the upcoming activation and individuals who are unfamiliar with the County EOC
+    to have a manageable checklist to follow for the operational period.
+
+· Recommendation: The County should consider further developing an EOC guide that potentially
+    includes elements covering an overview of the County for partners reporting to the EOC; a cross-
+    reference among NIMS, Emergency Support Function (ESF) and Community Lifeline models to
+    facilitate communication in the EOC; and an overview of County government and policies and laws
+    pertaining to incorporated areas, unincorporated areas and special districts.
+
+Observation 7: The County's debris management operation was equipped with the
+necessary resources, common operating picture and contracts to remove 6.3 million cubic
+yards of debris in unincorporated Lee County.
+
+The debris accumulation caused by Hurricane Ian required a significant response from the County for
+both land and waterway debris. The County maintains a comprehensive debris management plan with
+action items, roles and responsibilities, and third-party vendor information to augment operations. During
+a six-day period starting on Thursday, September 29, the County completed an initial assessment of
+debris with the support of 15 teams driving throughout the County and one aerial team conducting a
+flyover for areas that were inaccessible by vehicle. This initial
+assessment, on average, normally takes two weeks.
+
+Starting in October 2022, the County initiated a months-long         Figure 9: Hurricane Ian Debris Removal
+ongoing debris removal operation, leveraging sufficient                  Dashboard; Source: Lee County
+personnel, resources and equipment. The County also identified
+the need after Hurricane Irma to increase the number of open
+debris staging sites to 33, which proved successful in the
+aftermath of Hurricane Ian. In addition to the 33 sites, the County
+also made a controversial but necessary decision to augment
+debris management operations with the reopening of the Gulf
+Coast Landfill. The County, aware of the environmental and
+health concerns of reopening the landfill, was proactive and
+
+Lee County Hurricane Ian After-Action Report                                                                 22
+transparent in conducting stakeholder engagement and communications with nearby communities and
+the general population. The County also published a public-facing Hurricane Ian Debris Removal
+dashboard to track progress throughout the County.
+
+In addition to maintaining operational capacity through County resources and contracts, debris
+management required public engagement to ensure that residents and business owners collected and
+disposed of debris in a FEMA-compliant manner. To ensure compliance, the County released an engaging
+and educational campaign providing the community with best practices for debris collection and removal.
+
+Observation 8: The County coordinated effectively with non-profit, local, State and Federal
+partners to augment field and EOC activities as well as support POD and DRC efforts.
+
+The County leveraged partnerships with non-profit, local, State and Federal partners to support response
+activities and manage POD and DRC sites. The County worked with non-profits to operate and manage
+the EIHL co-located in the EOC before, during and after landfall. Post-landfall, the County leveraged the
+capabilities of and partnered with non-profits and faith-based organizations to manage volunteers and
+donations throughout the County. The County also worked with State and Federal partners to integrate
+mutual aid, including IMTs from around the country, to support EOC functions and various field
+operations, including USAR.
+
+The County successfully coordinated the opening of eight official and one unofficial POD sites with the
+State, with three opening by Saturday, October 1, and the remaining six opening by Tuesday, October 4.
+The State provided National Guard support to establish and operationalize the POD sites. When the
+National Guard demobilized, the County transitioned POD site operations to a highly organized volunteer
+organization. Had the County assessed that additional support was needed for the transition from National
+Guard to volunteers, there were plans in place to supplement POD sites with County staff. The County
+also coordinated with faith-based organizations to ensure that houses of worship could function as
+auxiliary PODs.
+
+Establishing and maintaining the DRCs around the County was a time- and resource-intensive task. The
+County was able to work with the State and FEMA on setting up DRC locations. The County pre-identified
+locations by jurisdiction for the placement of the DRCs, while the State and FEMA were on-location and
+helped integrate with County needs using the Unified Command and Incident Command System.
+
+Observation 9: While shelters were successfully supplied and operational for County
+residents on the morning of Tuesday, September 27, the County encountered challenges
+in managing the expectations of some shelter facilities and mobilizing shelter staff.
+
+The County successfully leveraged the TDS to supply and open shelters on the morning of Tuesday,
+September 27, to coincide with the County's evacuation order. However, the County encountered
+challenges in notifying shelter staff through E-Role of assigned shifts. This included staff supporting
+multiple school district locations, as well as Florida Gulf Coast University's Alico Arena and at Hertz Arena.
+E-Role notifications were distributed in a close timeframe to when shelters were opening, resulting in
+some staff being unable to report to their assigned shelter site in time. The County leveraged backfill staff
+in this case, but some backfill staff lacked current training on shelter operations. Additionally, E-Role
+notifications, at times, provided the wrong shift times resulting in secondary staffing gaps. In addition to
+staffing challenges, County coordination with owners of shelters not operated by the School District of
+Lee County was, at times, difficult to navigate regarding pre- and post-activation assessments of the
+shelter facilities. Since Hurricane Ian, the County has explored contracting shelter operations to a third-
+
+Lee County Hurricane Ian After-Action Report  23
+party vendor and leveraging a group of County staff to help facilitate shelter coordination between the
+vendor and the County.
+
+· Recommendation: The County should continue to explore and evaluate strategies and methods to
+    staff and coordinate shelter operations.
+
+· Recommendation: The County should continue to conduct training and exercises with County staff
+    on shelter operations.
+
+Observation 10: Staging areas and County property sustained occasional and localized
+flooding impacts and overcrowding.
+
+The topography of the County is exceptionally flat, which makes it highly susceptible to storm surge and
+freshwater flooding, which is generally slow to resolve. There are few areas or facilities available outside
+of the coastal communities or inland floodplain. During landfall, vehicles parked inside and outside of the
+Lee Civic Center, used as a logistics staging area (LSA), sustained flooding caused by Hurricane Ian.
+Additionally, some properties, such as airports, were at times crowded with the influx of Federal and State
+mutual aid resources coming in from around the State and country. Additionally, as a byproduct of the
+lack of visibility into incoming resources, mutual aid teams established their base camps on County
+properties intended for debris management use. As a result, there was additional coordination required
+to relocate resources from debris management sites post-landfall.
+
+· Recommendation: The County should consider conducting a land use assessment to both determine
+    the impacts of a Category 5 hurricane on various County properties and increase the number of
+    available LSA locations and debris staging areas.
+
+· Recommendation: The County should consider convening with municipalities and private entities to
+    coordinate the establishment of additional base camp locations within incorporated areas of the
+    County.
+
+Observation 11: The NIMS model resulted in span of control challenges for EOC operations.
+
+The County EOC leverages NIMS branches to organize and coordinate operations. Each branch typically
+should have a branch director. However, during Hurricane Ian, the Director of the Infrastructure Branch
+was absorbed into other critical functions, resulting in missed opportunities for lines of efforts, including
+transportation, power, water/wastewater utilities, maritime and debris management, to coordinate and
+collaborate on post-landfall efforts. Following Hurricane Ian, the County identified an opportunity to
+explore a pilot strategy to group like-partners in a separate conference room to facilitate information
+sharing and span of control.
+
+· Recommendation: The County should consider testing and evaluating the pilot strategy to determine
+    whether information sharing, span of control and operational coordination improves. Additionally, the
+    County should consider formalizing a required designated branch director for each branch.
+
+Observation 12: The County leveraged pre-existing staff support and wellness programs
+and partnerships to support County personnel throughout the response to Hurricane Ian.
+
+The County's Department of Public Safety had an established staff support and wellness program in place
+to support first responders during Hurricane Ian. Hurricane Ian impacted first responders through long
+and taxing shifts and by affecting their homes and families. The Department of Public Safety has a
+
+Lee County Hurricane Ian After-Action Report  24
+Licensed Mental Health Counselor on staff, who was instrumental in providing immediate assistance to
+staff and identifying mental health needs across the County.
+
+Additionally, Hurricane Ian impacted a large number of County employees, many of whom were still
+carrying on their essential functions. Working through County Human Resources, an Employee Resource
+Center was established to provide essential items to impacted staff, including food, water and clothing,
+as well as assistance finding temporary housing. Funding from the Board of County Commissioners
+Employee Resource Fund, coordinated by United Way, was also made available to staff.
+
+County leadership was instrumental in providing support and information to first responders and other
+County staff in E-Role. The County also garnered support from non-governmental organizations, such as
+the University of Central Florida (UCF). UCF was able to set up a hotline for the Emergency Dispatch
+Center dispatch staff to be able to speak with clinicians while on shift.
+
+While there were multiple support and wellness services and platforms aimed at assisting and supporting
+first responders, these resources were not always available countywide, especially for nontraditional E-
+Role staff who were supporting shelter, transportation, debris and other field operations. Magnifying this
+issue, many individuals supporting the response had personal impacts and losses from Hurricane Ian.
+Additionally, support and wellness resources were needed beyond the duration of the activation as
+stressors and trauma last for unspecified amounts of time following the response.
+
+· Recommendation: The County should consider increasing the capacity of staff support and wellness
+    programs through hiring trained clinicians and procuring the necessary resources to support all
+    County employees before, during and after disasters.
+
+Observation 13: Mitigation projects throughout the County increased the resiliency of
+infrastructure and expedited initial restoration activities following Hurricane Ian's storm
+surge and hurricane-force winds.
+
+Prior to Hurricane Ian, the County initiated and completed mitigation projects to improve the resiliency of
+infrastructure throughout the County. The County, in coordination with the Town of Fort Myers Beach,
+reinforced and fortified portions of Estero Boulevard. During Hurricane Ian, Estero Boulevard remained
+largely intact resulting in the County only needing to remove debris from the storm surge and wind.
+Following Hurricane Irma, the County made investments in fortifying traffic signal poles to withstand
+hurricane-force winds. As a result, following Hurricane Ian which approached the County as a Category
+5 and made landfall as a Category 4 hurricane, the County had less significant repairs to hardened
+transportation infrastructure and only had to restore signal boxes impacted by flooding. These are just
+two examples of dozens of post-Irma improvements that helped provide resiliency to an otherwise
+devastated community across the County.
+
+Following Hurricane Ian, the County identified opportunities to further explore mitigation strategies. For
+example, prior to Hurricane Ian, vehicles and equipment operated by municipalities and special districts
+were relocated off barrier islands and brought farther inland to safeguard from storm surge and hurricane-
+force winds. Following landfall, the barrier islands were inaccessible due to bridges being impassable and
+the waterway topography changing, limiting first push and response activities until vehicles and resources
+could arrive on the islands. Additionally, there is an opportunity for the County to explore impact modeling
+to more readily anticipate how a Category 5 hurricane would affect infrastructure countywide and inform
+a coordinated approach to restore infrastructure.
+
+Lee County Hurricane Ian After-Action Report  25
+· Recommendation: The County should consider exploring methods to store life-safety equipment and
+    vehicles on barrier islands to withstand storm surge and hurricane-force winds.
+
+· Recommendation: The County should consider incorporating impact modeling into hurricane
+    preparedness efforts to anticipate and visualize the potential impacts of a Category 5 hurricane on
+    county infrastructure. Impact modeling may also contribute to informing optimal use of LSA and base
+    camp properties to support teams and crews conducting impact assessment and infrastructure
+    restoration.
+
+Observation 14: The County identified opportunities to enhance communication and
+information flow with elected officials visiting the County EOC to strategically leverage
+intergovernmental support for the response.
+
+Throughout the Hurricane Ian response, Federal, State and local elected officials arrived at the EOC to
+gain situational awareness, identify ways in which they could help the response and advocate for their
+constituents. Following Hurricane Ian, the County identified opportunities to designate a team to liaise
+with elected officials arriving in the EOC to facilitate greater coordination between the EOC and various
+levels of government.
+
+· Recommendation: The County should consider establishing a team of designated staff as well as a
+    supporting protocol dedicated to liaising with elected officials at the County EOC. The staff should be
+    prepared to escort elected officials through a brief tour of the EOC, provide an overview of the
+    response including the most current Situation Report and IAP and listen to and address their needs
+    and priorities. Additionally, the intergovernmental liaison team should be prepared to have a list of
+    action items for elected officials in the event the elected officials ask how they can help the County's
+    efforts in the response.
+
+Lee County Hurricane Ian After-Action Report  26
+Conclusion
+
+Hurricane Ian was a massive incident on a scale that few communities will encounter. County staff did
+work during the response well beyond the typical scope of normal duties, yet seamlessly embraced new
+and emerging roles and responsibilities. This was also true of multi-jurisdictional, private sector and non-
+profit stakeholders, who were all committed to working together to support the Lee County community.
+
+We are grateful for the support of the Board of County Commissioners, which set the stage for the rapid
+progress immediately after the storm and still today as we work toward community-wide recovery.
+
+Hurricane Ian presents the County with opportunities to implement, evaluate and update pre-existing
+hurricane planning, response and initial recovery strategies. Opportunities like those illustrated here, in
+addition to the upcoming ResilientLee Recovery Task Force report, Hazard Mitigation Grant Fund projects
+and the County's Community Development Block Grant ­ Disaster Recovery initiatives, will provide a
+tangible improvement in the preparedness, response and recovery from future disasters in Lee County.
+
+The size and scope of this disaster does not deter us from rebuilding not just our County infrastructure
+but the community as a whole, our economy and our sense of place.
+
+Lee County Hurricane Ian After-Action Report  27
+Appendix: Acronyms
+
+Acronym  Definition
+
+AAR      After-Action Report
+CEMP     Comprehensive Emergency Management Plan
+COW      Cell-on-Wheels
+DOT      Department of Transportation
+DRC      Disaster Recovery Center
+E-Role   Emergency Role Program
+EIHL     Emergency Information Hotline
+EMS      Emergency Medical Services
+EOC      Emergency Operations Center
+ESF      Emergency Support Function
+FDEM     Florida Department of Emergency Management
+FDOT     Florida Department of Transportation
+FEMA     Federal Emergency Management Agency
+FP&L     Florida Power & Light
+HazMat   Hazardous Materials
+IAP      Incident Action Plan
+IMT      Incident Management Team
+IPAWS    Integrated Public Alert & Warning System
+JIC      Joint Information Center
+LCEC     Lee County Electric Cooperative
+LeeTran  Lee County Transit
+LSA      Logistics Staging Area
+mph      Miles Per Hour
+NHC      National Hurricane Center
+NIMS     National Incident Management System
+NWS      National Weather Service
+PIO      Public Information Officer
+POD      Point of Distribution
+SOG      Standard Operating Guide
+SOLE     State of Local Emergency
+SOP      Standard Operating Procedure
+TDS      Time Delineated Schedule
+UCF      University of Central Florida
+USAR     Urban Search and Rescue
+U.S.     United States
+USCG     United States Coast Guard
+
+         Lee County Hurricane Ian After-Action Report  28
+

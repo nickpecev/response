@@ -1,0 +1,975 @@
+{
+  "incidentId": "ian-2022",
+  "scenarioId": "ian-exercise-baseline",
+  "name": "Synthetic Response Exercise — Lee County (Baseline)",
+  "seed": 20220928,
+  "window": {
+    "start": "2022-09-27T16:00:00.000Z",
+    "end": "2022-10-02T12:00:00.000Z"
+  },
+  "notes": [
+    "All calls, units, assignments, communications and movements are fictional.",
+    "Real geography (road network, staging-area locations, surge planning zones) provides realistic operating conditions only.",
+    "Documented bridge closures from the Lee County AAR are applied with a modeled onset time; their documented report time is used as the latest time dispatch learns of them.",
+    "Service suspension window is informed by the AAR (suspension at 10:45 a.m. Sept 28; search and rescue began ~2:00 a.m. Sept 29)."
+  ],
+  "zones": [
+    {
+      "id": "sanibel-captiva",
+      "name": "Sanibel / Captiva",
+      "ring": [
+        [
+          -82.27,
+          26.4
+        ],
+        [
+          -82.0,
+          26.4
+        ],
+        [
+          -82.0,
+          26.5
+        ],
+        [
+          -82.16,
+          26.5
+        ],
+        [
+          -82.21,
+          26.58
+        ],
+        [
+          -82.27,
+          26.58
+        ]
+      ]
+    },
+    {
+      "id": "fort-myers-beach",
+      "name": "Fort Myers Beach (Estero Island)",
+      "ring": [
+        [
+          -81.985,
+          26.385
+        ],
+        [
+          -81.865,
+          26.385
+        ],
+        [
+          -81.865,
+          26.425
+        ],
+        [
+          -81.93,
+          26.475
+        ],
+        [
+          -81.985,
+          26.475
+        ]
+      ]
+    },
+    {
+      "id": "pine-island",
+      "name": "Pine Island / Matlacha",
+      "ring": [
+        [
+          -82.27,
+          26.5
+        ],
+        [
+          -82.16,
+          26.5
+        ],
+        [
+          -82.05,
+          26.58
+        ],
+        [
+          -82.05,
+          26.72
+        ],
+        [
+          -82.27,
+          26.72
+        ]
+      ]
+    },
+    {
+      "id": "iona",
+      "name": "Iona / South Fort Myers",
+      "ring": [
+        [
+          -82.0,
+          26.43
+        ],
+        [
+          -81.86,
+          26.43
+        ],
+        [
+          -81.86,
+          26.55
+        ],
+        [
+          -82.0,
+          26.55
+        ],
+        [
+          -82.0,
+          26.5
+        ]
+      ]
+    },
+    {
+      "id": "cape-coral",
+      "name": "Cape Coral",
+      "ring": [
+        [
+          -82.05,
+          26.55
+        ],
+        [
+          -81.9,
+          26.55
+        ],
+        [
+          -81.9,
+          26.73
+        ],
+        [
+          -82.05,
+          26.73
+        ]
+      ]
+    },
+    {
+      "id": "north-fort-myers",
+      "name": "North Fort Myers",
+      "ring": [
+        [
+          -81.9,
+          26.645
+        ],
+        [
+          -81.72,
+          26.645
+        ],
+        [
+          -81.72,
+          26.8
+        ],
+        [
+          -81.9,
+          26.8
+        ]
+      ]
+    },
+    {
+      "id": "fort-myers",
+      "name": "Fort Myers",
+      "ring": [
+        [
+          -81.9,
+          26.52
+        ],
+        [
+          -81.76,
+          26.52
+        ],
+        [
+          -81.76,
+          26.645
+        ],
+        [
+          -81.9,
+          26.645
+        ]
+      ]
+    },
+    {
+      "id": "estero-bonita",
+      "name": "Estero / Bonita Springs",
+      "ring": [
+        [
+          -81.86,
+          26.3
+        ],
+        [
+          -81.68,
+          26.3
+        ],
+        [
+          -81.68,
+          26.48
+        ],
+        [
+          -81.86,
+          26.48
+        ],
+        [
+          -81.865,
+          26.425
+        ]
+      ]
+    },
+    {
+      "id": "lehigh-east",
+      "name": "Lehigh Acres / East County",
+      "ring": [
+        [
+          -81.76,
+          26.48
+        ],
+        [
+          -81.55,
+          26.48
+        ],
+        [
+          -81.55,
+          26.8
+        ],
+        [
+          -81.72,
+          26.8
+        ],
+        [
+          -81.72,
+          26.645
+        ],
+        [
+          -81.76,
+          26.645
+        ]
+      ]
+    }
+  ],
+  "zoneWeights": {
+    "cape-coral": 3.0,
+    "fort-myers": 2.6,
+    "lehigh-east": 1.8,
+    "north-fort-myers": 1.5,
+    "estero-bonita": 1.8,
+    "fort-myers-beach": 1.4,
+    "sanibel-captiva": 1.1,
+    "pine-island": 1.0,
+    "iona": 1.4
+  },
+  "staging": [
+    {
+      "id": "stg-civic",
+      "fromAsset": "Lee Civic Center",
+      "kind": "ground",
+      "unsuitableFrom": "2022-09-28T21:00:00.000Z",
+      "relocateTo": "stg-jetblue",
+      "unsuitableReason": "Modeled flooding at site (assumption informed by AAR Observation 10, which documents flooding at the Lee Civic Center LSA)"
+    },
+    {
+      "id": "stg-jetblue",
+      "fromAsset": "jetBlue Park",
+      "kind": "ground"
+    },
+    {
+      "id": "stg-centurylink",
+      "fromAsset": "Centurylink Sports Complex",
+      "kind": "ground"
+    },
+    {
+      "id": "stg-cityofpalms",
+      "fromAsset": "City of Palms Park",
+      "kind": "ground"
+    },
+    {
+      "id": "stg-phillips",
+      "fromAsset": "Phillips Community Park",
+      "kind": "ground"
+    },
+    {
+      "id": "stg-dogtrack",
+      "fromAsset": "Naples/Fort Myers Dog Track",
+      "kind": "ground"
+    },
+    {
+      "id": "stg-capecoral",
+      "name": "Cape Coral Forward Staging (fictional)",
+      "lon": -81.9585,
+      "lat": 26.6355,
+      "kind": "ground"
+    },
+    {
+      "id": "stg-air",
+      "fromAsset": "Southwest Florida Intl Airport",
+      "name": "Air Operations Base (fictional, at airport staging area)",
+      "kind": "air_base"
+    },
+    {
+      "id": "stg-boat-puntarassa",
+      "name": "Boat Launch — Punta Rassa (fictional)",
+      "lon": -82.0105,
+      "lat": 26.4905,
+      "kind": "boat_launch"
+    },
+    {
+      "id": "stg-boat-bonita",
+      "name": "Boat Launch — Estero Bay (fictional)",
+      "lon": -81.8505,
+      "lat": 26.4215,
+      "kind": "boat_launch"
+    },
+    {
+      "id": "stg-boat-matlacha",
+      "name": "Boat Launch — Matlacha Pass East (fictional)",
+      "lon": -82.0455,
+      "lat": 26.6335,
+      "kind": "boat_launch"
+    }
+  ],
+  "capabilitiesByType": {
+    "fire_engine": [
+      "medical",
+      "rescue",
+      "welfare_check",
+      "infrastructure_obstruction",
+      "general"
+    ],
+    "medical": [
+      "medical",
+      "welfare_check",
+      "general"
+    ],
+    "search_rescue": [
+      "rescue",
+      "flood_access",
+      "welfare_check",
+      "medical",
+      "general"
+    ],
+    "high_water": [
+      "rescue",
+      "flood_access",
+      "welfare_check",
+      "medical",
+      "supply_assistance"
+    ],
+    "rescue_boat": [
+      "rescue",
+      "flood_access",
+      "medical",
+      "welfare_check"
+    ],
+    "air_rescue": [
+      "rescue",
+      "medical"
+    ],
+    "logistics": [
+      "supply_assistance",
+      "welfare_check"
+    ],
+    "utility_crew": [
+      "infrastructure_obstruction"
+    ]
+  },
+  "units": [
+    {
+      "id": "E-11",
+      "type": "fire_engine",
+      "stagingId": "stg-capecoral",
+      "aliases": [
+        "Engine 11",
+        "E11",
+        "Fire Unit 11"
+      ]
+    },
+    {
+      "id": "E-12",
+      "type": "fire_engine",
+      "stagingId": "stg-capecoral",
+      "aliases": [
+        "Engine 12",
+        "E12"
+      ]
+    },
+    {
+      "id": "E-13",
+      "type": "fire_engine",
+      "stagingId": "stg-cityofpalms",
+      "aliases": [
+        "Engine 13",
+        "E13"
+      ]
+    },
+    {
+      "id": "E-14",
+      "type": "fire_engine",
+      "stagingId": "stg-civic",
+      "aliases": [
+        "Engine 14",
+        "E14",
+        "Fire Unit 14"
+      ]
+    },
+    {
+      "id": "E-15",
+      "type": "fire_engine",
+      "stagingId": "stg-centurylink",
+      "aliases": [
+        "Engine 15",
+        "E15"
+      ]
+    },
+    {
+      "id": "E-16",
+      "type": "fire_engine",
+      "stagingId": "stg-dogtrack",
+      "aliases": [
+        "Engine 16",
+        "E16"
+      ]
+    },
+    {
+      "id": "E-17",
+      "type": "fire_engine",
+      "stagingId": "stg-jetblue",
+      "aliases": [
+        "Engine 17",
+        "E17",
+        "Fire Unit 07"
+      ],
+      "statusReportLagMin": 7
+    },
+    {
+      "id": "E-18",
+      "type": "fire_engine",
+      "stagingId": "stg-phillips",
+      "aliases": [
+        "Engine 18",
+        "E18"
+      ]
+    },
+    {
+      "id": "M-21",
+      "type": "medical",
+      "stagingId": "stg-cityofpalms",
+      "aliases": [
+        "Medic 21",
+        "M21"
+      ]
+    },
+    {
+      "id": "M-22",
+      "type": "medical",
+      "stagingId": "stg-capecoral",
+      "aliases": [
+        "Medic 22",
+        "M22"
+      ]
+    },
+    {
+      "id": "M-23",
+      "type": "medical",
+      "stagingId": "stg-civic",
+      "aliases": [
+        "Medic 23",
+        "M23"
+      ],
+      "statusReportLagMin": 6
+    },
+    {
+      "id": "M-24",
+      "type": "medical",
+      "stagingId": "stg-centurylink",
+      "aliases": [
+        "Medic 24",
+        "M24"
+      ]
+    },
+    {
+      "id": "M-25",
+      "type": "medical",
+      "stagingId": "stg-dogtrack",
+      "aliases": [
+        "Medic 25",
+        "M25"
+      ]
+    },
+    {
+      "id": "M-26",
+      "type": "medical",
+      "stagingId": "stg-jetblue",
+      "aliases": [
+        "Medic 26",
+        "M26"
+      ],
+      "shiftStart": "2022-09-29T18:00:00.000Z",
+      "restrictions": [
+        "Mutual aid — arrives post-landfall"
+      ]
+    },
+    {
+      "id": "SR-31",
+      "type": "search_rescue",
+      "stagingId": "stg-centurylink",
+      "aliases": [
+        "Rescue 31",
+        "SR31"
+      ]
+    },
+    {
+      "id": "SR-32",
+      "type": "search_rescue",
+      "stagingId": "stg-capecoral",
+      "aliases": [
+        "Rescue 32",
+        "SR32"
+      ]
+    },
+    {
+      "id": "SR-33",
+      "type": "search_rescue",
+      "stagingId": "stg-jetblue",
+      "aliases": [
+        "Rescue 33",
+        "SR33"
+      ],
+      "shiftStart": "2022-09-29T12:00:00.000Z",
+      "restrictions": [
+        "Mutual aid — arrives post-landfall"
+      ]
+    },
+    {
+      "id": "SR-34",
+      "type": "search_rescue",
+      "stagingId": "stg-dogtrack",
+      "aliases": [
+        "Rescue 34",
+        "SR34"
+      ],
+      "shiftStart": "2022-09-30T00:00:00.000Z",
+      "restrictions": [
+        "Mutual aid — arrives post-landfall"
+      ]
+    },
+    {
+      "id": "HW-41",
+      "type": "high_water",
+      "stagingId": "stg-civic",
+      "aliases": [
+        "High Water 41",
+        "HW41"
+      ]
+    },
+    {
+      "id": "HW-42",
+      "type": "high_water",
+      "stagingId": "stg-centurylink",
+      "aliases": [
+        "High Water 42",
+        "HW42"
+      ]
+    },
+    {
+      "id": "HW-43",
+      "type": "high_water",
+      "stagingId": "stg-capecoral",
+      "aliases": [
+        "High Water 43",
+        "HW43"
+      ]
+    },
+    {
+      "id": "HW-44",
+      "type": "high_water",
+      "stagingId": "stg-jetblue",
+      "aliases": [
+        "High Water 44",
+        "HW44"
+      ],
+      "shiftStart": "2022-09-29T12:00:00.000Z",
+      "restrictions": [
+        "Mutual aid — arrives post-landfall"
+      ]
+    },
+    {
+      "id": "B-51",
+      "type": "rescue_boat",
+      "stagingId": "stg-boat-puntarassa",
+      "aliases": [
+        "Boat 51",
+        "B51"
+      ],
+      "shiftStart": "2022-09-29T06:00:00.000Z",
+      "restrictions": [
+        "Water operations only after storm passage"
+      ]
+    },
+    {
+      "id": "B-52",
+      "type": "rescue_boat",
+      "stagingId": "stg-boat-bonita",
+      "aliases": [
+        "Boat 52",
+        "B52"
+      ],
+      "shiftStart": "2022-09-29T06:00:00.000Z",
+      "restrictions": [
+        "Water operations only after storm passage"
+      ]
+    },
+    {
+      "id": "B-53",
+      "type": "rescue_boat",
+      "stagingId": "stg-boat-matlacha",
+      "aliases": [
+        "Boat 53",
+        "B53"
+      ],
+      "shiftStart": "2022-09-29T18:00:00.000Z",
+      "restrictions": [
+        "Mutual aid — arrives post-landfall"
+      ]
+    },
+    {
+      "id": "A-61",
+      "type": "air_rescue",
+      "stagingId": "stg-air",
+      "aliases": [
+        "Air 61",
+        "A61"
+      ],
+      "shiftStart": "2022-09-29T11:00:00.000Z",
+      "restrictions": [
+        "Daylight / wind limits; P1 rescue and medical only"
+      ]
+    },
+    {
+      "id": "A-62",
+      "type": "air_rescue",
+      "stagingId": "stg-air",
+      "aliases": [
+        "Air 62",
+        "A62"
+      ],
+      "shiftStart": "2022-09-29T15:00:00.000Z",
+      "restrictions": [
+        "Daylight / wind limits; P1 rescue and medical only"
+      ]
+    },
+    {
+      "id": "L-71",
+      "type": "logistics",
+      "stagingId": "stg-civic",
+      "aliases": [
+        "Logistics 71",
+        "L71"
+      ]
+    },
+    {
+      "id": "L-72",
+      "type": "logistics",
+      "stagingId": "stg-jetblue",
+      "aliases": [
+        "Logistics 72",
+        "L72"
+      ]
+    },
+    {
+      "id": "U-81",
+      "type": "utility_crew",
+      "stagingId": "stg-centurylink",
+      "aliases": [
+        "Utility 81",
+        "U81"
+      ],
+      "shiftStart": "2022-09-29T10:00:00.000Z"
+    },
+    {
+      "id": "U-82",
+      "type": "utility_crew",
+      "stagingId": "stg-cityofpalms",
+      "aliases": [
+        "Utility 82",
+        "U82"
+      ],
+      "shiftStart": "2022-09-29T10:00:00.000Z"
+    }
+  ],
+  "demand": {
+    "total": 228,
+    "phases": [
+      {
+        "label": "Pre-landfall",
+        "start": "2022-09-27T16:00:00.000Z",
+        "end": "2022-09-28T12:00:00.000Z",
+        "rate": 0.4,
+        "hazardBoost": 0.2,
+        "categoryMix": {
+          "medical": 40,
+          "welfare_check": 20,
+          "general": 20,
+          "supply_assistance": 10,
+          "infrastructure_obstruction": 10
+        }
+      },
+      {
+        "label": "Storm & landfall",
+        "start": "2022-09-28T12:00:00.000Z",
+        "end": "2022-09-29T06:00:00.000Z",
+        "rate": 2.0,
+        "hazardBoost": 1.6,
+        "categoryMix": {
+          "rescue": 35,
+          "flood_access": 20,
+          "medical": 25,
+          "welfare_check": 10,
+          "infrastructure_obstruction": 10
+        }
+      },
+      {
+        "label": "Post-landfall peak",
+        "start": "2022-09-29T06:00:00.000Z",
+        "end": "2022-09-30T06:00:00.000Z",
+        "rate": 5.0,
+        "hazardBoost": 1.2,
+        "categoryMix": {
+          "rescue": 22,
+          "welfare_check": 22,
+          "medical": 20,
+          "infrastructure_obstruction": 14,
+          "flood_access": 12,
+          "supply_assistance": 10
+        }
+      },
+      {
+        "label": "Extended response",
+        "start": "2022-09-30T06:00:00.000Z",
+        "end": "2022-10-01T06:00:00.000Z",
+        "rate": 2.0,
+        "hazardBoost": 0.6,
+        "categoryMix": {
+          "welfare_check": 28,
+          "medical": 22,
+          "supply_assistance": 20,
+          "infrastructure_obstruction": 15,
+          "rescue": 10,
+          "general": 5
+        }
+      },
+      {
+        "label": "Stabilization",
+        "start": "2022-10-01T06:00:00.000Z",
+        "end": "2022-10-02T06:00:00.000Z",
+        "rate": 0.6,
+        "hazardBoost": 0.2,
+        "categoryMix": {
+          "medical": 30,
+          "welfare_check": 25,
+          "supply_assistance": 25,
+          "general": 10,
+          "infrastructure_obstruction": 10
+        }
+      }
+    ]
+  },
+  "priorityByCategory": {
+    "rescue": [
+      0.7,
+      0.25,
+      0.05
+    ],
+    "medical": [
+      0.4,
+      0.5,
+      0.1
+    ],
+    "flood_access": [
+      0.3,
+      0.55,
+      0.15
+    ],
+    "welfare_check": [
+      0.05,
+      0.4,
+      0.55
+    ],
+    "infrastructure_obstruction": [
+      0.05,
+      0.45,
+      0.5
+    ],
+    "supply_assistance": [
+      0.0,
+      0.25,
+      0.75
+    ],
+    "general": [
+      0.05,
+      0.3,
+      0.65
+    ]
+  },
+  "serviceMinByCategory": {
+    "rescue": [
+      60,
+      180
+    ],
+    "medical": [
+      35,
+      80
+    ],
+    "flood_access": [
+      45,
+      120
+    ],
+    "welfare_check": [
+      25,
+      60
+    ],
+    "infrastructure_obstruction": [
+      60,
+      180
+    ],
+    "supply_assistance": [
+      40,
+      90
+    ],
+    "general": [
+      25,
+      60
+    ]
+  },
+  "hazard": {
+    "file": "surge-zones.geojson",
+    "categories": [
+      1
+    ],
+    "label": "Modeled high-water restriction: Lee County SLOSH Category 1 surge planning zone (lowest-lying areas)"
+  },
+  "floodRestriction": {
+    "start": "2022-09-28T18:00:00.000Z",
+    "end": "2022-09-29T22:00:00.000Z"
+  },
+  "disruptions": [
+    {
+      "fromVerified": "dc-sanibel-causeway",
+      "start": "2022-09-28T19:30:00.000Z",
+      "knownToDispatchAt": "2022-09-29T16:00:00.000Z",
+      "discoveredInField": true
+    },
+    {
+      "fromVerified": "dc-matlacha",
+      "start": "2022-09-28T19:30:00.000Z",
+      "knownToDispatchAt": "2022-09-29T16:00:00.000Z",
+      "discoveredInField": true
+    },
+    {
+      "fromVerified": "dc-big-carlos",
+      "start": "2022-09-28T19:30:00.000Z",
+      "knownToDispatchAt": "2022-09-30T16:00:00.000Z",
+      "discoveredInField": true
+    },
+    {
+      "fromVerified": "dc-new-pass",
+      "start": "2022-09-28T19:30:00.000Z",
+      "knownToDispatchAt": "2022-09-30T16:00:00.000Z",
+      "discoveredInField": true
+    },
+    {
+      "fromVerified": "dc-big-hickory",
+      "start": "2022-09-28T19:30:00.000Z",
+      "knownToDispatchAt": "2022-09-30T16:00:00.000Z",
+      "discoveredInField": true
+    },
+    {
+      "id": "hyp-san-carlos",
+      "name": "HYPOTHETICAL: San Carlos Blvd (Matanzas Pass) closure",
+      "osmNames": [
+        "San Carlos Boulevard"
+      ],
+      "near": [
+        -81.953,
+        26.46
+      ],
+      "radiusM": 1500,
+      "bridgesOnly": true,
+      "start": "2022-09-29T08:00:00.000Z",
+      "end": "2022-10-01T16:00:00.000Z",
+      "discoveredInField": true,
+      "affects": [
+        "all"
+      ],
+      "description": "Fictional exercise restriction reducing access to Fort Myers Beach. Not a documented Hurricane Ian closure."
+    }
+  ],
+  "commDelays": [
+    {
+      "id": "comm-cape-coral",
+      "zoneId": "cape-coral",
+      "start": "2022-09-29T10:00:00.000Z",
+      "end": "2022-09-30T02:00:00.000Z",
+      "extraAckMin": [
+        6,
+        18
+      ],
+      "description": "Fictional radio channel congestion in the Cape Coral response zone delays receipt of dispatches."
+    }
+  ],
+  "statusLags": [
+    {
+      "id": "lag-cad-backlog",
+      "start": "2022-09-29T12:00:00.000Z",
+      "end": "2022-09-30T12:00:00.000Z",
+      "extraLagMin": [
+        5,
+        25
+      ],
+      "description": "Fictional CAD status-update backlog: units clear scenes before dispatch records them as available."
+    }
+  ],
+  "suspension": {
+    "start": "2022-09-28T14:45:00.000Z",
+    "end": "2022-09-29T06:00:00.000Z",
+    "description": "Responses suspended during storm conditions (modeled window informed by Lee County AAR)",
+    "sourceLocator": "AAR p. 15: 'suspend emergency services at 10:45 a.m.' (Sept 28); 'Initial Search and rescue efforts begin at approximately 2:00 a.m.' (Sept 29)"
+  },
+  "speedPhases": [
+    {
+      "start": "2022-09-27T16:00:00.000Z",
+      "factor": 1.0,
+      "label": "Pre-landfall: normal conditions"
+    },
+    {
+      "start": "2022-09-28T14:45:00.000Z",
+      "factor": 0.5,
+      "label": "Storm conditions"
+    },
+    {
+      "start": "2022-09-29T06:00:00.000Z",
+      "factor": 0.55,
+      "label": "Post-landfall debris (modeled)"
+    },
+    {
+      "start": "2022-09-30T06:00:00.000Z",
+      "factor": 0.65,
+      "label": "Debris + traffic (AAR notes traffic hindered response Sept 30)"
+    },
+    {
+      "start": "2022-10-01T06:00:00.000Z",
+      "factor": 0.85,
+      "label": "Partial clearance (modeled)"
+    }
+  ],
+  "policy": "priority_nearest",
+  "baseAckMin": [
+    1,
+    3
+  ],
+  "defaultShift": {
+    "start": "2022-09-27T16:00:00.000Z",
+    "end": "2022-10-02T12:00:00.000Z"
+  },
+  "defaultStatusLagRange": [
+    1,
+    4
+  ]
+}
