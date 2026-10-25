@@ -33,6 +33,11 @@ body {
     font-family: var(--font-sans);
 }
 
+.map-frame .maplibregl-ctrl-bottom-right,
+.map-frame .maplibregl-ctrl-bottom-left {
+    bottom: 3.25rem;
+}
+
 @media print {
     .no-print {
         display: none;

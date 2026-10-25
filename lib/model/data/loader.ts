@@ -90,7 +90,7 @@ export interface RoadGraph {
     builtAt: string;
     bbox: [number, number, number, number];
     classes: string[];
-    nodes: number[][];
+    nodes: number[];
     edges: number[][];
     geom: number[];
     names: string[];

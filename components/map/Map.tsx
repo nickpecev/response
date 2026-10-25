@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as maplibre from "maplibre-gl";
 import MapCanvas, { Layer, NavigationControl, ScaleControl, Source, useControl } from "react-map-gl/maplibre";
 import { MapboxOverlay, type MapboxOverlayProps } from "@deck.gl/mapbox";
@@ -8,7 +8,8 @@ import { GeoJsonLayer, PathLayer, PolygonLayer, ScatterplotLayer, TextLayer } fr
 import type { Layer as DeckLayer, PickingInfo } from "@deck.gl/core";
 import type { FeatureCollection } from "geojson";
 import type { ExerciseInputs, InfrastructureAsset, Observation } from "@/lib/model/types";
-import type { GeoJSONFC, IncidentBundle, InfrastructureDisruption, StormTrackPoint } from "@/lib/model/data/loader";
+import type { GeoJSONFC, IncidentBundle, InfrastructureDisruption, RoadGraph, StormTrackPoint } from "@/lib/model/data/loader";
+import { positionAt, simulate, type SimulatedUnit, type Simulation } from "@/lib/simulation/engine";
 
 maplibre.setWorkerUrl("/vendor/maplibre-gl-worker.mjs");
 
@@ -28,6 +29,44 @@ const SURGE: [number, number, number, number][] = [
 
 function surgeColor(category: number): [number, number, number, number] {
     return SURGE[category - 1] ?? faint;
+}
+
+function unitColor(index: number): [number, number, number] {
+    const hue = ((index * 137.508) % 360) / 360;
+    const chroma = 0.62 * (1 - Math.abs((2 * 0.58) - 1));
+    const x = chroma * (1 - Math.abs(((hue * 6) % 2) - 1));
+    const match = 0.58 - chroma / 2;
+    let red = 0;
+    let green = 0;
+    let blue = 0;
+    const sector = Math.floor(hue * 6);
+    if (sector === 0) [red, green, blue] = [chroma, x, 0];
+    else if (sector === 1) [red, green, blue] = [x, chroma, 0];
+    else if (sector === 2) [red, green, blue] = [0, chroma, x];
+    else if (sector === 3) [red, green, blue] = [0, x, chroma];
+    else if (sector === 4) [red, green, blue] = [x, 0, chroma];
+    else [red, green, blue] = [chroma, 0, x];
+    return [Math.round((red + match) * 255), Math.round((green + match) * 255), Math.round((blue + match) * 255)];
+}
+
+function tripPath(unit: SimulatedUnit, time: number): [number, number][] | null {
+    const trip = unit.trips.find((item) => time >= item.start && time < item.end);
+    if (!trip) return null;
+
+    const path: [number, number][] = [];
+    for (const point of unit.track) {
+        if (point.t < trip.start || point.t > time) continue;
+        const last = path[path.length - 1];
+        if (last && last[0] === point.lon && last[1] === point.lat) continue;
+        path.push([point.lon, point.lat]);
+    }
+
+    const at = positionAt(unit.track, time);
+    if (at) {
+        const last = path[path.length - 1];
+        if (!last || last[0] !== at.lon || last[1] !== at.lat) path.push([at.lon, at.lat]);
+    }
+    return path.length > 1 ? path : null;
 }
 
 function collection(data: GeoJSONFC): FeatureCollection {
@@ -66,10 +105,11 @@ type LayerId =
     | "county"
     | "flood"
     | "staging"
-    | "calls";
+    | "calls"
+    | "units";
 
 const LAYER_LABELS: { id: LayerId; label: string }[] = [
-    { id: "imagery", label: "`Imagery`" },
+    { id: "imagery", label: "Imagery" },
     { id: "storm", label: "Storm" },
     { id: "observations", label: "Observations" },
     { id: "assets", label: "Assets" },
@@ -80,6 +120,7 @@ const LAYER_LABELS: { id: LayerId; label: string }[] = [
     { id: "flood", label: "Flood limit" },
     { id: "staging", label: "Staging" },
     { id: "calls", label: "Calls" },
+    { id: "units", label: "Units" },
 ];
 
 function layersIn(bundle: IncidentBundle) {
@@ -95,16 +136,54 @@ function layersIn(bundle: IncidentBundle) {
     if (bundle.exercise) present.add("flood");
     if (bundle.exercise?.staging.length) present.add("staging");
     if (bundle.exercise?.calls.length) present.add("calls");
+    if (bundle.exercise?.units.length) present.add("units");
     
     return LAYER_LABELS.filter((layer) => present.has(layer.id));
 }
 
-function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>): DeckLayer[] {
+function initialTime(bundle: IncidentBundle) {
+    const start = Date.parse(bundle.manifest.timeRange.start);
+    const marked = (bundle.manifest as { defaultTime?: string }).defaultTime;
+    if (!marked) return start;
+    const time = Date.parse(marked);
+    return Number.isFinite(time) ? time : start;
+}
+
+function observationReady(observation: Observation, time: number) {
+    if (observation.t) return Date.parse(observation.t) <= time;
+    const flagged = observation.props.flaggedAt;
+    if (typeof flagged === "string") return Date.parse(flagged) <= time;
+    return true;
+}
+
+function stormPosition(points: StormTrackPoint[], time: number): StormTrackPoint | null {
+    if (!points.length || time < Date.parse(points[0].t)) return null;
+    const last = points[points.length - 1];
+    if (time >= Date.parse(last.t)) return last;
+
+    let index = 1;
+    while (index < points.length && Date.parse(points[index].t) < time) index += 1;
+    const before = points[index - 1];
+    const after = points[index];
+    const span = Date.parse(after.t) - Date.parse(before.t);
+    const fraction = span === 0 ? 0 : (time - Date.parse(before.t)) / span;
+    return {
+        ...before,
+        t: new Date(time).toISOString(),
+        lon: before.lon + (after.lon - before.lon) * fraction,
+        lat: before.lat + (after.lat - before.lat) * fraction,
+        windKt: before.windKt + (after.windKt - before.windKt) * fraction,
+        pressureMb: Math.round(before.pressureMb + (after.pressureMb - before.pressureMb) * fraction),
+        interpolated: true,
+    };
+}
+
+function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, time: number, simulation: Simulation | null): DeckLayer[] {
     const layers: DeckLayer[] = [];
-    const stormPoints = bundle.storm?.points ?? [];
+    const stormPoints = (bundle.storm?.points ?? []).filter((point) => Date.parse(point.t) <= time);
     const exercise = bundle.exercise;
-    const observations = bundle.observations.filter((observation) => observation.location);
-    const taskForces = located(bundle.observations, "task_force_position");
+    const observations = bundle.observations.filter((observation) => observation.location && observationReady(observation, time));
+    const taskForces = located(observations, "task_force_position");
 
     if (visible.county && bundle.hazardArea) {
         layers.push(
@@ -164,7 +243,9 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>):
         );
     }
 
-    if (visible.flood && exercise) {
+    const flood = exercise?.floodRestriction;
+    const floodActive = flood && time >= Date.parse(flood.start) && time < Date.parse(flood.end);
+    if (visible.flood && exercise && floodActive) {
         layers.push(
             new PolygonLayer({
                 id: "flood-restriction",
@@ -179,7 +260,12 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>):
         );
     }
 
-    const disruptions = bundle.disruptions.filter((disruption) => disruption.path.length > 1);
+    const disruptions = bundle.disruptions.filter((disruption) => {
+        if (disruption.path.length < 2) return false;
+        const opened = Date.parse(disruption.start);
+        const closed = disruption.end ? Date.parse(disruption.end) : Infinity;
+        return time >= opened && time < closed;
+    });
     if (visible.disruptions && disruptions.length) {
         layers.push(
             new PathLayer({
@@ -194,8 +280,10 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>):
         );
     }
 
+    const position = stormPosition(bundle.storm?.points ?? [], time);
     if (visible.storm && stormPoints.length) {
         const path = stormPoints.map((point) => [point.lon, point.lat] as [number, number]);
+        if (position) path.push([position.lon, position.lat]);
         layers.push(
             new PathLayer({
                 id: "storm-path",
@@ -217,6 +305,22 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>):
                 pickable: true,
             }),
         );
+        if (position) {
+            layers.push(
+                new ScatterplotLayer({
+                    id: "storm-center",
+                    data: [position],
+                    getPosition: (point: StormTrackPoint) => [point.lon, point.lat],
+                    getFillColor: white,
+                    getLineColor: [0, 0, 0, 255],
+                    stroked: true,
+                    lineWidthMinPixels: 2,
+                    getRadius: 7,
+                    radiusUnits: "pixels",
+                    pickable: true,
+                }),
+            );
+        }
     }
 
     if (visible.observations && observations.length) {
@@ -280,18 +384,61 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>):
         );
     }
 
-    if (visible.calls && exercise?.calls.length) {
+    const calls = exercise?.calls.filter((call) => Date.parse(call.createdAt) <= time) ?? [];
+    if (visible.calls && calls.length) {
         layers.push(
             new ScatterplotLayer({
                 id: "calls",
-                data: exercise.calls,
+                data: calls,
                 getPosition: (call: ExerciseInputs["calls"][number]) => [call.location.lon, call.location.lat],
-                getFillColor: [242, 242, 242, 90],
-                getRadius: (call: ExerciseInputs["calls"][number]) => (call.priority === 1 ? 4 : 2.5),
+                getFillColor: [255, 255, 255, 255],
+                getLineColor: [0, 0, 0, 255],
+                stroked: true,
+                lineWidthMinPixels: 1,
+                getRadius: (call: ExerciseInputs["calls"][number]) => (call.priority === 1 ? 5 : 3.5),
                 radiusUnits: "pixels",
                 pickable: true,
             }),
         );
+    }
+
+    if (visible.units && simulation) {
+        const drawn = simulation.units.flatMap((unit, index) => {
+            const at = positionAt(unit.track, time);
+            if (!at || time > unit.shiftEnd) return [];
+            return [{ unit, color: unitColor(index), lon: at.lon, lat: at.lat, path: tripPath(unit, time) }];
+        });
+        const trails = drawn.filter((item) => item.path);
+        if (trails.length) {
+            layers.push(
+                new PathLayer({
+                    id: "unit-paths",
+                    data: trails,
+                    getPath: (item: (typeof trails)[number]) => item.path!,
+                    getColor: (item: (typeof trails)[number]) => [...item.color, 210],
+                    widthMinPixels: 2,
+                    capRounded: true,
+                    jointRounded: true,
+                    pickable: true,
+                }),
+            );
+        }
+        if (drawn.length) {
+            layers.push(
+                new ScatterplotLayer({
+                    id: "units",
+                    data: drawn,
+                    getPosition: (item: (typeof drawn)[number]) => [item.lon, item.lat],
+                    getFillColor: (item: (typeof drawn)[number]) => [...item.color, 255],
+                    getLineColor: [0, 0, 0, 255],
+                    stroked: true,
+                    lineWidthMinPixels: 1,
+                    getRadius: 5,
+                    radiusUnits: "pixels",
+                    pickable: true,
+                }),
+            );
+        }
     }
 
     return layers;
@@ -332,6 +479,11 @@ function describePick(layerId: string, object: unknown, bundle: IncidentBundle):
         return { title: site.name, lines: [readable(site.kind), site.classification] };
     }
 
+    if (layerId === "units" || layerId === "unit-paths") {
+        const unit = (object as { unit: SimulatedUnit }).unit;
+        return { title: unit.callSign, lines: [readable(unit.type), unit.classification] };
+    }
+
     if (layerId === "calls") {
         const call = object as ExerciseInputs["calls"][number];
         return {
@@ -340,7 +492,7 @@ function describePick(layerId: string, object: unknown, bundle: IncidentBundle):
         };
     }
 
-    if (layerId === "storm-fixes") {
+    if (layerId === "storm-center" || layerId === "storm-fixes") {
         const point = object as StormTrackPoint;
         const lines = [`${point.windKt} kt, ${point.pressureMb} mb`, formatWhen(point.t, timeZone)];
         if (point.interpolated) lines.push("Interpolated between best-track fixes");
@@ -398,20 +550,22 @@ interface HoverTip extends Tip {
 
 interface MapProps {
     bundle: IncidentBundle;
+    roads: RoadGraph | null;
 }
 
 const INITIAL_LAYERS: Record<LayerId, boolean> = {
     imagery: false,
     storm: true,
-    observations: true,
-    assets: true,
-    disruptions: true,
+    observations: false,
+    assets: false,
+    disruptions: false,
     surge: true,
-    evacuation: true,
-    county: true,
-    flood: true,
-    staging: true,
+    evacuation: false,
+    county: false,
+    flood: false,
+    staging: false,
     calls: true,
+    units: true,
 };
 
 function LayerToggle({
@@ -426,7 +580,7 @@ function LayerToggle({
     const [open, setOpen] = useState(false);
 
     return (
-        <div className="absolute bottom-3 left-3 z-10 border border-line bg-bg">
+        <div className="absolute bottom-14 left-3 z-10 border border-line bg-bg">
             {open && (
                 <div className="border-b border-line py-1">
                     {options.map((option) => (
@@ -457,16 +611,115 @@ function LayerToggle({
     );
 }
 
-export function Map({ bundle }: MapProps) {
+function Playback({
+    start,
+    end,
+    time,
+    playing,
+    timeZone,
+    onTime,
+    onToggle,
+}: {
+    start: number;
+    end: number;
+    time: number;
+    playing: boolean;
+    timeZone: string;
+    onTime: (time: number) => void;
+    onToggle: () => void;
+}) {
+    return (
+        <div className="absolute inset-x-0 bottom-0 z-10 flex items-center gap-3 border-t border-line bg-bg px-3 py-2">
+            <button
+                type="button"
+                onClick={onToggle}
+                className="flex h-8 w-8 shrink-0 items-center justify-center border border-line"
+                aria-label={playing ? "Pause" : "Play"}
+            >
+                {playing ? (
+                    <span className="flex gap-1">
+                        <span className="h-3 w-0.5 bg-fg" />
+                        <span className="h-3 w-0.5 bg-fg" />
+                    </span>
+                ) : (
+                    <span className="ml-0.5 border-y-[5px] border-l-[7px] border-y-transparent border-l-fg" />
+                )}
+            </button>
+            <input
+                type="range"
+                min={start}
+                max={end}
+                step={1_000}
+                value={Math.min(time, end)}
+                onPointerDown={() => {
+                    if (playing) onToggle();
+                }}
+                onChange={(event) => onTime(Number(event.target.value))}
+                className="min-w-0 flex-1 accent-fg"
+                aria-label="Time"
+            />
+            <span className="shrink-0 text-xs text-muted">{formatWhen(new Date(time).toISOString(), timeZone)}</span>
+        </div>
+    );
+}
+
+export function Map({ bundle, roads }: MapProps) {
     const [tip, setTip] = useState<HoverTip | null>(null);
     const [visible, setVisible] = useState(INITIAL_LAYERS);
+    const [time, setTime] = useState(() => initialTime(bundle));
+    const [playing, setPlaying] = useState(false);
     const options = useMemo(() => layersIn(bundle), [bundle]);
-    const layers = useMemo(() => buildLayers(bundle, visible), [bundle, visible]);
+    const simulation = useMemo(() => (bundle.exercise ? simulate(bundle.exercise, roads) : null), [bundle.exercise, roads]);
+    const layers = useMemo(() => buildLayers(bundle, visible, time, simulation), [bundle, visible, time, simulation]);
     const [longitude, latitude] = bundle.manifest.center;
+    const start = Date.parse(bundle.manifest.timeRange.start);
+    const end = Date.parse(bundle.manifest.timeRange.end);
+
+    useEffect(() => {
+        setTime(initialTime(bundle));
+        setPlaying(false);
+    }, [bundle]);
+
+    useEffect(() => {
+        if (!playing) return;
+        let frame = 0;
+        let last = performance.now();
+        const tick = (now: number) => {
+            const elapsed = now - last;
+            last = now;
+            setTime((current) => {
+                const next = current + ((end - start) * elapsed) / 150_000;
+                return next >= end ? end : next;
+            });
+            frame = requestAnimationFrame(tick);
+        };
+        frame = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frame);
+    }, [playing, start, end]);
+
+    useEffect(() => {
+        if (playing && time >= end) setPlaying(false);
+    }, [playing, time, end]);
 
     function toggle(id: LayerId) {
         setVisible((current) => ({ ...current, [id]: !current[id] }));
     }
+
+    function togglePlay() {
+        if (playing) {
+            setPlaying(false);
+            return;
+        }
+        if (time >= end - 1000) setTime(start);
+        setPlaying(true);
+    }
+
+    const day = new Intl.DateTimeFormat("en-CA", {
+        timeZone: bundle.manifest.timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).format(time);
 
     function onHover(info: PickingInfo) {
         if (!info.object || !info.layer) {
@@ -482,7 +735,7 @@ export function Map({ bundle }: MapProps) {
     }
 
     return (
-        <div className="relative h-full w-full" onMouseLeave={() => setTip(null)}>
+        <div className="map-frame relative h-full w-full" onMouseLeave={() => setTip(null)}>
             <div className="absolute top-3 left-3 z-10 border border-line bg-bg px-2 py-1 text-xs text-dim">
                 <a href="https://openfreemap.org" target="_blank" rel="noreferrer" className="text-fg">
                     OpenFreeMap
@@ -499,7 +752,7 @@ export function Map({ bundle }: MapProps) {
                 attributionControl={{ compact: true }}
                 style={{ width: "100%", height: "100%" }}
             >
-                {visible.imagery && bundle.imagery.map((imagery) => (
+                {visible.imagery && bundle.imagery.filter((imagery) => imagery.acquiredDate <= day).map((imagery) => (
                     <Source
                         key={imagery.id}
                         id={imagery.id}
@@ -517,6 +770,18 @@ export function Map({ bundle }: MapProps) {
                 <ScaleControl position="bottom-right" unit="imperial" />
             </MapCanvas>
             <LayerToggle options={options} visible={visible} onToggle={toggle} />
+            <Playback
+                start={start}
+                end={end}
+                time={time}
+                playing={playing}
+                timeZone={bundle.manifest.timezone}
+                onTime={(next) => {
+                    setPlaying(false);
+                    setTime(next);
+                }}
+                onToggle={togglePlay}
+            />
             {tip && (
                 <div
                     className="pointer-events-none absolute z-10 max-w-xs border border-line bg-bg px-2 py-1.5 text-xs"
