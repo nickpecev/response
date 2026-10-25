@@ -6,6 +6,7 @@ import {
     dataSourceSchema,
     exerciseInputsSchema,
     locationSchema,
+    manifestSchema,
     observationSchema,
     sourceSchema,
     timeSchema,
@@ -30,6 +31,7 @@ export type ObservationKind = Observation["kind"];
 export type InfrastructureAsset = z.infer<typeof assetSchema>;
 export type AssetKind = InfrastructureAsset["kind"];
 
+export type IncidentManifest = z.infer<typeof manifestSchema>;
 export type ExerciseInputs = z.infer<typeof exerciseInputsSchema>;
 export type Zone = ExerciseInputs["zones"][number];
 export type Unit = z.infer<typeof unitSchema>;
