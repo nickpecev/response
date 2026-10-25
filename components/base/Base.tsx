@@ -15,11 +15,11 @@ interface NavItem {
 const NAV: NavItem[] = [
     { href: "/", label: "Overview" },
     // { href: "/incidents", label: "Incident Workspaces" },
-    // { href: "/workspace", label: "Live Reconstruction", scoped: true },
     // { href: "/investigations", label: "Investigations" },
     // { href: "/analytics", label: "Analytics" },
     // { href: "/reports", label: "After-Action Reports" },
     // { href: "/settings", label: "Settings" },
+    // These were all planned, but will possibly implement later
 ];
 
 function navHref(item: NavItem, activeIncidentId: string) {

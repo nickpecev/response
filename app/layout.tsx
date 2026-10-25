@@ -8,7 +8,7 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const mono = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "EventTruth — Emergency Response Forensics", template: "%s · EventTruth" },
+  title: { default: "Aftermath", template: "%s · Aftermath" },
   description: "Reconstruct the incident. Understand the response. Improve what happens next.",
 };
 
