@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as maplibre from "maplibre-gl";
-import MapCanvas, { Layer, NavigationControl, ScaleControl, Source, useControl } from "react-map-gl/maplibre";
+import MapCanvas, { Layer, NavigationControl, ScaleControl, Source, useControl, type MapRef } from "react-map-gl/maplibre";
 import { MapboxOverlay, type MapboxOverlayProps } from "@deck.gl/mapbox";
 import { GeoJsonLayer, PathLayer, PolygonLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import type { Layer as DeckLayer, PickingInfo } from "@deck.gl/core";
@@ -11,6 +11,7 @@ import type { ExerciseInputs, InfrastructureAsset, Observation } from "@/lib/mod
 import type { IncidentBundle, InfrastructureDisruption, RoadGraph, StormTrackPoint } from "@/lib/model/data/loader";
 import { positionAt, simulate, type SimulatedUnit, type Simulation } from "@/lib/simulation/engine";
 import { EventList } from "@/components/map/EventList";
+import { UnitList } from "@/components/map/UnitList";
 
 maplibre.setWorkerUrl("/vendor/maplibre-gl-worker.mjs");
 
@@ -26,6 +27,18 @@ const SURGE: [number, number, number, number][] = [
     [210, 82, 52, 140],
     [168, 42, 58, 150],
     [110, 36, 92, 160],
+];
+
+const WIND_FILL: [number, number, number, number][] = [
+    [242, 184, 75, 18],
+    [249, 115, 22, 22],
+    [240, 113, 113, 32],
+];
+
+const WIND_LINE: [number, number, number, number][] = [
+    [242, 184, 75, 150],
+    [249, 115, 22, 170],
+    [240, 113, 113, 210],
 ];
 
 const UNIT_COLORS: [number, number, number][] = [
@@ -147,6 +160,28 @@ function observationReady(observation: Observation, time: number) {
     return true;
 }
 
+function mixRadius(before: number[] | undefined, after: number[] | undefined, fraction: number) {
+    if (!before) return after ?? [];
+    if (!after) return before;
+    return before.map((value, index) => value + ((after[index] ?? value) - value) * fraction);
+}
+
+function windRing(lon: number, lat: number, radiiNm: number[]) {
+    if (!radiiNm.some((radius) => radius > 0)) return [];
+    const ring: [number, number][] = [];
+    const kx = 1 / (60 * Math.cos((lat * Math.PI) / 180));
+    const start = [0, 90, 180, 270];
+    for (let quadrant = 0; quadrant < 4; quadrant++) {
+        const radius = radiiNm[quadrant] ?? 0;
+        for (let bearing = start[quadrant]; bearing <= start[quadrant] + 90; bearing += 6) {
+            const rad = (bearing * Math.PI) / 180;
+            ring.push([lon + Math.sin(rad) * radius * kx, lat + (Math.cos(rad) * radius) / 60]);
+        }
+    }
+    ring.push(ring[0]);
+    return ring;
+}
+
 function stormPosition(points: StormTrackPoint[], time: number): StormTrackPoint | null {
     if (!points.length || time < Date.parse(points[0].t)) return null;
     const last = points[points.length - 1];
@@ -158,6 +193,13 @@ function stormPosition(points: StormTrackPoint[], time: number): StormTrackPoint
     const after = points[index];
     const span = Date.parse(after.t) - Date.parse(before.t);
     const fraction = span === 0 ? 0 : (time - Date.parse(before.t)) / span;
+    const radii = before.radii && after.radii
+        ? {
+            kt34: mixRadius(before.radii.kt34, after.radii.kt34, fraction),
+            kt50: mixRadius(before.radii.kt50, after.radii.kt50, fraction),
+            kt64: mixRadius(before.radii.kt64, after.radii.kt64, fraction),
+        }
+        : before.radii;
     return {
         ...before,
         t: new Date(time).toISOString(),
@@ -165,11 +207,12 @@ function stormPosition(points: StormTrackPoint[], time: number): StormTrackPoint
         lat: before.lat + (after.lat - before.lat) * fraction,
         windKt: before.windKt + (after.windKt - before.windKt) * fraction,
         pressureMb: Math.round(before.pressureMb + (after.pressureMb - before.pressureMb) * fraction),
+        radii,
         interpolated: true,
     };
 }
 
-function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, time: number, simulation: Simulation | null): DeckLayer[] {
+function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, time: number, simulation: Simulation | null, zoom: number): DeckLayer[] {
     const layers: DeckLayer[] = [];
     const stormPoints = (bundle.storm?.points ?? []).filter((point) => Date.parse(point.t) <= time);
     const exercise = bundle.exercise;
@@ -272,6 +315,26 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
     }
 
     const position = stormPosition(bundle.storm?.points ?? [], time);
+    if (visible.storm && position?.radii) {
+        const rings = (["kt34", "kt50", "kt64"] as const)
+            .map((key, index) => ({ key, index, ring: windRing(position.lon, position.lat, position.radii?.[key] ?? []) }))
+            .filter((item) => item.ring.length);
+        if (rings.length) {
+            layers.push(
+                new PolygonLayer({
+                    id: "wind-field",
+                    data: rings,
+                    getPolygon: (item: (typeof rings)[number]) => item.ring,
+                    getFillColor: (item: (typeof rings)[number]) => WIND_FILL[item.index],
+                    getLineColor: (item: (typeof rings)[number]) => WIND_LINE[item.index],
+                    filled: true,
+                    stroked: true,
+                    lineWidthMinPixels: 1,
+                    pickable: true,
+                }),
+            );
+        }
+    }
     if (visible.storm && stormPoints.length) {
         const path = stormPoints.map((point) => [point.lon, point.lat] as [number, number]);
         if (position) path.push([position.lon, position.lat]);
@@ -417,6 +480,21 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
             if (lines.done) traveled.push({ unit, color, path: lines.done });
             if (lines.ahead) upcoming.push({ unit, color, path: lines.ahead });
         }
+        const labels: { lon: number; lat: number; text: string }[] = [];
+        if (zoom >= 11) {
+            for (const marker of markers) labels.push({ lon: marker.lon, lat: marker.lat, text: marker.unit.callSign });
+        } else {
+            const counts: Record<string, { lon: number; lat: number; n: number }> = {};
+            for (const marker of markers) {
+                const key = `${marker.lon.toFixed(4)}:${marker.lat.toFixed(4)}`;
+                const group = counts[key];
+                if (group) group.n += 1;
+                else counts[key] = { lon: marker.lon, lat: marker.lat, n: 1 };
+            }
+            for (const group of Object.values(counts)) {
+                if (group.n > 1) labels.push({ lon: group.lon, lat: group.lat, text: String(group.n) });
+            }
+        }
         const pathParameters = { depthCompare: "always" as const, depthWriteEnabled: false };
         if (upcoming.length) {
             layers.push(
@@ -459,10 +537,29 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
                     getFillColor: (item: (typeof markers)[number]) => [item.color[0], item.color[1], item.color[2], 255],
                     getLineColor: [0, 0, 0, 255],
                     stroked: true,
-                    lineWidthMinPixels: 1,
-                    getRadius: 5,
+                    lineWidthMinPixels: 2,
+                    getRadius: 7,
                     radiusUnits: "pixels",
                     pickable: true,
+                }),
+            );
+        }
+        if (labels.length) {
+            layers.push(
+                new TextLayer({
+                    id: "unit-labels",
+                    data: labels,
+                    getPosition: (item: (typeof labels)[number]) => [item.lon, item.lat],
+                    getText: (item: (typeof labels)[number]) => item.text,
+                    getSize: 11,
+                    getColor: [242, 242, 242, 230],
+                    getPixelOffset: [0, -16],
+                    fontFamily: "JetBrains Mono, ui-monospace, monospace",
+                    fontWeight: 600,
+                    outlineWidth: 3,
+                    outlineColor: [0, 0, 0, 230],
+                    fontSettings: { sdf: true },
+                    pickable: false,
                 }),
             );
         }
@@ -531,6 +628,12 @@ function describePick(layerId: string, object: unknown, bundle: IncidentBundle):
         return { title: bundle.storm.name, lines: [bundle.storm.interpolationNote] };
     }
 
+    if (layerId === "wind-field") {
+        const ring = object as { key: string };
+        const knots = ring.key.replace("kt", "");
+        return { title: `${knots} kt wind radius`, lines: ["Quadrant radii from the best track"] };
+    }
+
     if (layerId === "surge") {
         const feature = object as { properties?: { category?: number; maxHeightFt?: number; note?: string } };
         const category = feature.properties?.category;
@@ -589,49 +692,6 @@ const INITIAL_LAYERS: Record<LayerId, boolean> = {
     calls: true,
     units: true,
 };
-
-function LayerToggle({
-    options,
-    visible,
-    onToggle,
-}: {
-    options: { id: LayerId; label: string }[];
-    visible: Record<LayerId, boolean>;
-    onToggle: (id: LayerId) => void;
-}) {
-    const [open, setOpen] = useState(false);
-
-    return (
-        <div className="absolute bottom-52 left-3 z-10 border border-line bg-bg">
-            {open && (
-                <div className="border-b border-line py-1">
-                    {options.map((option) => (
-                        <button
-                            key={option.id}
-                            type="button"
-                            onClick={() => onToggle(option.id)}
-                            className={`flex w-full items-center gap-2 px-2 py-1 text-left text-xs ${visible[option.id] ? "text-fg" : "text-dim"}`}
-                        >
-                            <span className={`h-2 w-2 border border-current ${visible[option.id] ? "bg-current" : ""}`} />
-                            {option.label}
-                        </button>
-                    ))}
-                </div>
-            )}
-            <button
-                type="button"
-                onClick={() => setOpen((value) => !value)}
-                className="flex h-8 w-8 flex-col items-center justify-center gap-1"
-                aria-label="Layers"
-                aria-expanded={open}
-            >
-                <span className="h-px w-3 bg-fg" />
-                <span className="h-px w-3 bg-fg" />
-                <span className="h-px w-3 bg-fg" />
-            </button>
-        </div>
-    );
-}
 
 const SPEEDS = [1, 5, 15, 60, 240] as const;
 const HEADER = 18;
@@ -1010,13 +1070,15 @@ function Playback({
 
 export function Map({ bundle, roads }: MapProps) {
     const [tip, setTip] = useState<HoverTip | null>(null);
+    const mapRef = useRef<MapRef>(null);
     const [visible, setVisible] = useState(INITIAL_LAYERS);
     const [time, setTime] = useState(() => initialTime(bundle));
     const [playing, setPlaying] = useState(false);
     const [speed, setSpeed] = useState(15);
+    const [zoom, setZoom] = useState(bundle.manifest.zoom);
     const options = useMemo(() => layersIn(bundle), [bundle]);
     const simulation = useMemo(() => (bundle.exercise ? simulate(bundle.exercise, roads) : null), [bundle.exercise, roads]);
-    const layers = useMemo(() => buildLayers(bundle, visible, time, simulation), [bundle, visible, time, simulation]);
+    const layers = useMemo(() => buildLayers(bundle, visible, time, simulation, zoom), [bundle, visible, time, simulation, zoom]);
     const [longitude, latitude] = bundle.manifest.center;
     const start = Date.parse(bundle.manifest.timeRange.start);
     const end = Date.parse(bundle.manifest.timeRange.end);
@@ -1024,6 +1086,7 @@ export function Map({ bundle, roads }: MapProps) {
     useEffect(() => {
         setTime(initialTime(bundle));
         setPlaying(false);
+        setZoom(bundle.manifest.zoom);
     }, [bundle]);
 
     useEffect(() => {
@@ -1100,6 +1163,23 @@ export function Map({ bundle, roads }: MapProps) {
         setTime(Math.min(end, Math.max(start, next)));
     }
 
+    function focusUnit(lon: number, lat: number) {
+        const map = mapRef.current;
+        if (!map) return;
+        const canvas = map.getCanvas();
+        map.flyTo({
+            center: [lon, lat],
+            zoom: Math.max(map.getZoom(), 12),
+            padding: {
+                top: 40,
+                right: 24,
+                bottom: Math.min(220, canvas.height * 0.35),
+                left: Math.min(250, canvas.width * 0.4),
+            },
+            duration: 700,
+        });
+    }
+
     return (
         <div className="flex h-full w-full">
             <div className="map-frame relative min-h-0 min-w-0 flex-1" onMouseLeave={() => setTip(null)}>
@@ -1113,8 +1193,13 @@ export function Map({ bundle, roads }: MapProps) {
                 </a>
             </div>
             <MapCanvas
+                ref={mapRef}
                 mapLib={maplibre}
                 initialViewState={{ longitude, latitude, zoom: bundle.manifest.zoom }}
+                onMove={(event) => {
+                    const next = event.viewState.zoom;
+                    setZoom((current) => (Math.abs(current - next) < 0.05 ? current : next));
+                }}
                 mapStyle={DARK}
                 attributionControl={{ compact: true }}
                 style={{ width: "100%", height: "100%" }}
@@ -1136,7 +1221,15 @@ export function Map({ bundle, roads }: MapProps) {
                 <NavigationControl position="top-right" showCompass={false} />
                 <ScaleControl position="bottom-right" unit="imperial" />
             </MapCanvas>
-            <LayerToggle options={options} visible={visible} onToggle={toggle} />
+            <UnitList
+                units={simulation?.units ?? []}
+                colors={UNIT_COLORS}
+                time={time}
+                onSelect={focusUnit}
+                layers={options}
+                visible={visible}
+                onToggle={(id) => toggle(id as LayerId)}
+            />
             <Playback
                 bundle={bundle}
                 start={start}
