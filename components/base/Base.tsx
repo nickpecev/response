@@ -16,7 +16,7 @@ const NAV: NavItem[] = [
     { href: "/", label: "Overview" },
     // { href: "/incidents", label: "Incident Workspaces" },
     // { href: "/investigations", label: "Investigations" },
-    // { href: "/analytics", label: "Analytics" },
+    { href: "/analytics", label: "Analytics" },
     // { href: "/reports", label: "After-Action Reports" },
     // { href: "/settings", label: "Settings" },
     // These were all planned, but will possibly implement later
