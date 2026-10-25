@@ -47,7 +47,7 @@ export const sourceSchema = z.object({
     TimePrecision: timeSchema.optional(),
     locationPrecision: locationSchema.optional(),
     classification: classificationSchema.optional(),
-    confidence: z.enum(["high", "medium", "low", "unknown"]),
+    confidence: z.enum(["high", "medium", "low"]),
     validation: z.enum(["valid", "invalid", "unvalidated"]),
     notes: z.string().optional(),
 });
