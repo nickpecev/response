@@ -730,7 +730,7 @@ function describePick(layerId: string, object: unknown, bundle: IncidentBundle):
 
 function DeckOverlay(props: MapboxOverlayProps) {
     const overlay = useControl<MapboxOverlay>(() => new MapboxOverlay(props));
-    overlay.setProps(props);
+    useEffect(() => overlay.setProps(props), [overlay, props]);
     return null;
 }
 
