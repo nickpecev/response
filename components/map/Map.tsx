@@ -154,6 +154,29 @@ function roadClosures(bundle: IncidentBundle): InfrastructureDisruption[] {
     return bundle.disruptions;
 }
 
+interface ClosedSegment {
+    disruption: InfrastructureDisruption;
+    path: [number, number][];
+}
+
+function closureSegments(disruption: InfrastructureDisruption, roads: RoadGraph | null): ClosedSegment[] {
+    const segments: ClosedSegment[] = [];
+    if (roads) {
+        for (const id of disruption.edgeIds) {
+            const edge = roads.edges[id];
+            if (!edge) continue;
+            const path: [number, number][] = [];
+            for (let i = edge[5]; i < edge[6]; i += 2) {
+                path.push([roads.geom[i], roads.geom[i + 1]]);
+            }
+            if (path.length > 1) segments.push({ disruption, path });
+        }
+    }
+    if (segments.length) return segments;
+    if (disruption.path.length > 1) return [{ disruption, path: disruption.path }];
+    return [];
+}
+
 function initialTime(bundle: IncidentBundle) {
     const start = Date.parse(bundle.manifest.timeRange.start);
     const marked = (bundle.manifest as { defaultTime?: string }).defaultTime;
@@ -230,7 +253,7 @@ function stormPosition(points: StormTrackPoint[], time: number): StormTrackPoint
     };
 }
 
-function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, time: number, simulation: Simulation | null, zoom: number): DeckLayer[] {
+function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: Record<LayerId, boolean>, time: number, simulation: Simulation | null, zoom: number): DeckLayer[] {
     const layers: DeckLayer[] = [];
     const stormPoints = (bundle.storm?.points ?? []).filter((point) => Date.parse(point.t) <= time);
     const exercise = bundle.exercise;
@@ -312,11 +335,11 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
         );
     }
 
-    const disruptions = roadClosures(bundle).filter((disruption) => {
-        if (disruption.path.length < 2) return false;
+    const disruptions = roadClosures(bundle).flatMap((disruption) => {
         const opened = Date.parse(disruption.start);
         const closed = disruption.end ? Date.parse(disruption.end) : Infinity;
-        return time >= opened && time < closed;
+        if (time < opened || time >= closed) return [];
+        return closureSegments(disruption, roads);
     });
     if (visible.disruptions && disruptions.length) {
         const pathParameters = { depthCompare: "always" as const, depthWriteEnabled: false };
@@ -324,7 +347,7 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
             new PathLayer({
                 id: "disruptions",
                 data: disruptions,
-                getPath: (disruption: InfrastructureDisruption) => disruption.path,
+                getPath: (segment: ClosedSegment) => segment.path,
                 getColor: closedOutline,
                 widthMinPixels: 6,
                 capRounded: true,
@@ -337,7 +360,7 @@ function buildLayers(bundle: IncidentBundle, visible: Record<LayerId, boolean>, 
             new PathLayer({
                 id: "disruptions-line",
                 data: disruptions,
-                getPath: (disruption: InfrastructureDisruption) => disruption.path,
+                getPath: (segment: ClosedSegment) => segment.path,
                 getColor: closedLine,
                 widthMinPixels: 3.5,
                 capRounded: true,
@@ -632,7 +655,7 @@ function describePick(layerId: string, object: unknown, bundle: IncidentBundle):
     }
 
     if (layerId === "disruptions" || layerId === "disruptions-line") {
-        const disruption = object as InfrastructureDisruption;
+        const disruption = (object as ClosedSegment).disruption;
         const lines = [disruption.name, `From ${formatWhen(disruption.start, timeZone)}`];
         if (disruption.end) lines.push(`Until ${formatWhen(disruption.end, timeZone)}`);
         return { title: "Road closed", lines };
@@ -1119,9 +1142,10 @@ export function Map({ bundle, roads }: MapProps) {
     const [playing, setPlaying] = useState(false);
     const [speed, setSpeed] = useState(15);
     const [zoom, setZoom] = useState(bundle.manifest.zoom);
+    const [mapReady, setMapReady] = useState(false);
     const options = useMemo(() => layersIn(bundle), [bundle]);
     const simulation = useMemo(() => (bundle.exercise ? simulate(bundle.exercise, roads) : null), [bundle.exercise, roads]);
-    const layers = useMemo(() => buildLayers(bundle, visible, time, simulation, zoom), [bundle, visible, time, simulation, zoom]);
+    const layers = useMemo(() => buildLayers(bundle, roads, visible, time, simulation, zoom), [bundle, roads, visible, time, simulation, zoom]);
     const [longitude, latitude] = bundle.manifest.center;
     const start = Date.parse(bundle.manifest.timeRange.start);
     const end = Date.parse(bundle.manifest.timeRange.end);
@@ -1244,6 +1268,7 @@ export function Map({ bundle, roads }: MapProps) {
                     setZoom((current) => (Math.abs(current - next) < 0.05 ? current : next));
                 }}
                 mapStyle={DARK}
+                onLoad={() => setMapReady(true)}
                 attributionControl={{ compact: true }}
                 style={{ width: "100%", height: "100%" }}
             >
@@ -1260,7 +1285,7 @@ export function Map({ bundle, roads }: MapProps) {
                         <Layer id={`${imagery.id}-layer`} type="raster" paint={{ "raster-opacity": 0.85 }} />
                     </Source>
                 ))}
-                <DeckOverlay layers={layers} onHover={onHover} getCursor={({ isHovering }) => (isHovering ? "pointer" : "grab")} />
+                {mapReady && <DeckOverlay layers={layers} onHover={onHover} getCursor={({ isHovering }) => (isHovering ? "pointer" : "grab")} />}
                 <NavigationControl position="top-right" showCompass={false} />
                 <ScaleControl position="bottom-right" unit="imperial" />
             </MapCanvas>
