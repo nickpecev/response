@@ -1,9 +1,8 @@
+import type { Metadata } from "next";
+import { Analytics } from "@/components/analytics/Analytics";
 
+export const metadata: Metadata = { title: "Analytics" };
 
 export default function AnalyticsPage() {
-    return (
-        <div className="h-full p-6">
-            <h1 className="text-sm text-fg">Analytics</h1>
-        </div>
-    )
+    return <Analytics />;
 }
