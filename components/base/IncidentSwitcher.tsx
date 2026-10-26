@@ -22,7 +22,7 @@ export function IncidentSwitcher() {
             <select
                 value={activeIncidentId}
                 onChange={(event) => setActiveIncidentId(event.target.value)}
-                className="w-full truncate bg-transparent px-2 text-[13px] text-muted outline-none"
+                className="w-full truncate bg-bg px-2 text-[13px] text-muted outline-none"
             >
                 {!listed && <option value={activeIncidentId}>{activeIncidentId}</option>}
                 {incidents.map((incident) => (

@@ -181,7 +181,7 @@ function Filter({ label, value, onChange, options }: { label: string; value: str
     return (
         <label className="text-[13px] text-muted">
             <span className="mr-2 text-[11px] text-dim">{label}</span>
-            <select value={value} onChange={(event) => onChange(event.target.value)} className="bg-transparent text-[13px] text-muted outline-none">
+            <select value={value} onChange={(event) => onChange(event.target.value)} className="bg-bg text-[13px] text-muted outline-none">
                 {options.map((option) => (
                     <option key={option.value} value={option.value}>
                         {option.label}

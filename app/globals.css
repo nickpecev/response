@@ -33,6 +33,16 @@ body {
     font-family: var(--font-sans);
 }
 
+select {
+    color-scheme: dark;
+    background-color: #000;
+}
+
+select option {
+    background-color: #000;
+    color: #f2f2f2;
+}
+
 .map-frame .maplibregl-ctrl-bottom-right,
 .map-frame .maplibregl-ctrl-bottom-left {
     bottom: 13rem;
