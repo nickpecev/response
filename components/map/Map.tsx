@@ -246,7 +246,7 @@ function stormPosition(points: StormTrackPoint[], time: number): StormTrackPoint
         t: new Date(time).toISOString(),
         lon: before.lon + (after.lon - before.lon) * fraction,
         lat: before.lat + (after.lat - before.lat) * fraction,
-        windKt: before.windKt + (after.windKt - before.windKt) * fraction,
+        windKt: Math.round(before.windKt + (after.windKt - before.windKt) * fraction),
         pressureMb: Math.round(before.pressureMb + (after.pressureMb - before.pressureMb) * fraction),
         radii,
         interpolated: true,
