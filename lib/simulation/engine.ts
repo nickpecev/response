@@ -18,9 +18,23 @@ export interface SimulatedUnit {
     callSign: string;
     type: UnitType;
     classification: Unit["classification"];
+    readyAt: number;
     shiftEnd: number;
     track: TrackPoint[];
     trips: Trip[];
+    distanceM: number;
+    obstructions: number;
+}
+
+export interface AssignmentRecord {
+    callId: string;
+    unitId: string;
+    assignedAt: number;
+    ackAt: number;
+    arrivedAt: number;
+    clearedAt: number;
+    returnedAt: number;
+    knownFreeAt: number;
 }
 
 export interface HandledCall {
@@ -31,6 +45,7 @@ export interface HandledCall {
 export interface Simulation {
     units: SimulatedUnit[];
     handled: HandledCall[];
+    assignments: AssignmentRecord[];
 }
 
 interface Place {
@@ -54,6 +69,7 @@ interface Runner {
     trips: Trip[];
     discovered: Set<number>;
     skipped: Set<string>;
+    obstructions: number;
 }
 
 function meters(from: Place, to: Place) {
@@ -174,11 +190,13 @@ export function simulate(inputs: ExerciseInputs, roads: RoadGraph | null): Simul
             trips: [],
             discovered: new Set<number>(),
             skipped: new Set<string>(),
+            obstructions: 0,
         };
     });
 
     const calls = [...inputs.calls].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.priority - b.priority);
     const handled: HandledCall[] = [];
+    const assignments: AssignmentRecord[] = [];
     const waiting: ExerciseInputs["calls"] = [];
     let nextCall = 0;
     const queue = [Date.parse(inputs.window.start), ...calls.map((call) => Date.parse(call.createdAt))];
@@ -261,11 +279,10 @@ export function simulate(inputs: ExerciseInputs, roads: RoadGraph | null): Simul
     }
 
     function noteBlock(runner: Runner, edge: number, block: ExerciseInputs["disruptions"][number] | "flood") {
-        if (block === "flood") {
-            runner.discovered.add(edge);
-            return;
-        }
-        for (const other of block.edgeIds) runner.discovered.add(other);
+        const before = runner.discovered.size;
+        if (block === "flood") runner.discovered.add(edge);
+        else for (const other of block.edgeIds) runner.discovered.add(other);
+        if (runner.discovered.size > before) runner.obstructions += 1;
     }
 
     function straightMs(type: UnitType, from: Place, to: Place, respond: boolean) {
@@ -433,6 +450,16 @@ export function simulate(inputs: ExerciseInputs, roads: RoadGraph | null): Simul
             const done = Number.isFinite(back) ? back : clear;
             runner.freeAt = done + runner.unit.statusReportLagMin * 60_000;
             if (done > depart) runner.trips.push({ start: depart, end: done });
+            assignments.push({
+                callId: call.id,
+                unitId: runner.unit.id,
+                assignedAt: time,
+                ackAt: depart,
+                arrivedAt: arrived,
+                clearedAt: clear,
+                returnedAt: done,
+                knownFreeAt: runner.freeAt,
+            });
             waiting.shift();
             push(runner.freeAt);
         }
@@ -453,10 +480,20 @@ export function simulate(inputs: ExerciseInputs, roads: RoadGraph | null): Simul
             callSign: runner.unit.callSign,
             type: runner.unit.type,
             classification: runner.unit.classification,
+            readyAt: runner.readyAt,
             shiftEnd: runner.shiftEnd,
             track: runner.track,
             trips: runner.trips,
+            distanceM: trackDistance(runner.track),
+            obstructions: runner.obstructions,
         })),
         handled,
+        assignments,
     };
+}
+
+function trackDistance(track: TrackPoint[]) {
+    let sum = 0;
+    for (let index = 1; index < track.length; index++) sum += meters(track[index - 1], track[index]);
+    return sum;
 }
