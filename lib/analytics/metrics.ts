@@ -43,7 +43,7 @@ export interface UnitRow {
     assignments: number;
     onCallPct: number | null;
     cycleMin: number | null;
-    distanceKm: number;
+    distanceMi: number;
     obstructions: number;
 }
 
@@ -211,7 +211,7 @@ export function analyticsMetrics(exercise: ExerciseInputs, simulation: Simulatio
                 assignments: jobs.length,
                 onCallPct: shift > 0 ? (onCall / shift) * 100 : null,
                 cycleMin: cycles.length ? cycles.reduce((sum, value) => sum + value, 0) / cycles.length : null,
-                distanceKm: unit.distanceM / 1000,
+                distanceMi: unit.distanceM / 1609.344,
                 obstructions: unit.obstructions,
             };
         })

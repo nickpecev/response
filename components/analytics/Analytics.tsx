@@ -158,7 +158,7 @@ export function Analytics() {
                                 String(row.assignments),
                                 row.onCallPct === null ? "—" : `${Math.round(row.onCallPct)}%`,
                                 formatDuration(row.cycleMin),
-                                `${Math.round(row.distanceKm)} km`,
+                                `${Math.round(row.distanceMi)} mi`,
                             ])}
                         />
                     </>
