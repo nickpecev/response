@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as maplibre from "maplibre-gl";
 import MapCanvas, { Layer, NavigationControl, ScaleControl, Source, useControl, type MapRef } from "react-map-gl/maplibre";
 import { MapboxOverlay, type MapboxOverlayProps } from "@deck.gl/mapbox";
@@ -1143,6 +1143,7 @@ export function Map({ bundle, roads }: MapProps) {
     const [speed, setSpeed] = useState(15);
     const [zoom, setZoom] = useState(bundle.manifest.zoom);
     const [mapReady, setMapReady] = useState(false);
+    useLayoutEffect(() => () => setMapReady(false), []);
     const options = useMemo(() => layersIn(bundle), [bundle]);
     const simulation = useMemo(() => (bundle.exercise ? simulate(bundle.exercise, roads) : null), [bundle.exercise, roads]);
     const layers = useMemo(() => buildLayers(bundle, roads, visible, time, simulation, zoom), [bundle, roads, visible, time, simulation, zoom]);
