@@ -3,6 +3,7 @@
 @theme inline {
     --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
     --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+    --font-display: var(--font-figtree), var(--font-geist), ui-sans-serif, system-ui, sans-serif;
 
     /* Surfaces are separated by tone; borders are reserved for structure. */
     --color-bg: #0b0c0d;
