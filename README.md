@@ -11,3 +11,5 @@ By combining data from various sources, Aftermath builds an interactive map of a
 ## Overview
 
 Emergency response operations generate information across multiple systems, including dispatch logs, GPS tracking, communications, weather records, and geographic databases. Analyzing these disconnected sources after an incident can be difficult.
+
+Submitted to Congressional App Challenge

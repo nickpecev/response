@@ -1,28 +1,23 @@
 @import "tailwindcss";
 
-:root {
-    --background: #ffffff;
-    --foreground: #171717;
-}
-
 @theme inline {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-    --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+    --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 
-    --color-bg: #000000;
-    --color-fg: #f2f2f2;
-    --color-line: #222222;
-    --color-muted: #8a8a8a;
-    --color-dim: #5c5c5c;
-}
+    /* Surfaces are separated by tone; borders are reserved for structure. */
+    --color-bg: #0b0c0d;
+    --color-panel: #111214;
+    --color-raised: #17181b;
+    --color-line: #222428;
+    --color-rule: #1a1c1f;
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
-    }
+    --color-fg: #e8e8e6;
+    --color-muted: #8b8d91;
+    --color-dim: #55585d;
+
+    /* Monochrome: "now" is simply the brightest white. Red marks failure; nothing else is coloured. */
+    --color-accent: #ffffff;
+    --color-signal: #e5533d;
 }
 
 body {
@@ -31,21 +26,81 @@ body {
     color: var(--color-fg);
     color-scheme: dark;
     font-family: var(--font-sans);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+    background: var(--color-accent);
+    color: var(--color-bg);
+}
+
+:focus-visible {
+    outline: 1px solid var(--color-accent);
+    outline-offset: 1px;
 }
 
 select {
     color-scheme: dark;
-    background-color: #000;
+    background-color: transparent;
+    cursor: pointer;
 }
 
 select option {
-    background-color: #000;
-    color: #f2f2f2;
+    background-color: var(--color-raised);
+    color: var(--color-fg);
 }
 
-.map-frame .maplibregl-ctrl-bottom-right,
-.map-frame .maplibregl-ctrl-bottom-left {
-    bottom: 13rem;
+/* Section labels and axis ticks only. Never data, never body copy. */
+@utility caps {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.4;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+}
+
+/* MapLibre controls, matched to the raised surface. */
+.map-frame .maplibregl-ctrl-group {
+    border-radius: 2px;
+    box-shadow: 0 1px 0 rgb(0 0 0 / 0.4);
+    background: var(--color-raised);
+}
+
+.map-frame .maplibregl-ctrl-group button + button {
+    border-top: 1px solid var(--color-line);
+}
+
+.map-frame .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+    filter: invert(0.88);
+}
+
+.map-frame .maplibregl-ctrl-scale {
+    border-color: var(--color-muted);
+    background: transparent;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+}
+
+.map-frame .maplibregl-ctrl-attrib {
+    background: rgb(11 12 13 / 0.7) !important;
+    color: var(--color-dim);
+    font-size: 10px;
+}
+
+.map-frame .maplibregl-ctrl-attrib a {
+    color: var(--color-muted);
+}
+
+.map-frame .maplibregl-ctrl-attrib-button {
+    filter: invert(0.8);
+    background-color: transparent;
 }
 
 @media print {

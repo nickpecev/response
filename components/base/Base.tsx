@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useApp } from "@/lib/store/app";
 import { IncidentSwitcher } from "@/components/base/IncidentSwitcher";
 
@@ -27,6 +27,34 @@ function navHref(item: NavItem, activeIncidentId: string) {
     return item.href;
 }
 
+export function Mark({ className = "" }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 20 20" className={className} aria-hidden>
+            <path d="M10 2.5 17.5 16.5H2.5Z" fill="none" stroke="currentColor" strokeWidth="1.6" />
+            <path d="M5.2 11.5h9.6" stroke="currentColor" strokeWidth="1.6" />
+            <rect x="8.6" y="13.2" width="2.8" height="2.8" className="fill-accent" />
+        </svg>
+    );
+}
+
+function Clock() {
+    const [now, setNow] = useState<Date | null>(null);
+    useEffect(() => {
+        const tick = () => setNow(new Date());
+        const first = window.setTimeout(tick, 0);
+        const id = window.setInterval(tick, 1000);
+        return () => {
+            window.clearTimeout(first);
+            window.clearInterval(id);
+        };
+    }, []);
+    return (
+        <span className="font-mono text-[11px] tabular-nums text-muted" title="Coordinated Universal Time">
+            {now ? `${now.toISOString().slice(11, 19)}Z` : "--:--:--Z"}
+        </span>
+    );
+}
+
 interface BaseProps {
     children: ReactNode;
 }
@@ -40,15 +68,13 @@ export function Base({ children }: BaseProps) {
     }, []);
 
     return (
-        <div className="flex h-dvh w-full overflow-hidden bg-bg text-fg">
-            <aside className="no-print flex w-52 shrink-0 flex-col border-r border-line bg-bg">
-                <div className="space-y-3 border-b border-line px-2 py-3">
-                    <Link href="/" className="block truncate px-2 text-sm text-fg">
-                        Response Tool
-                    </Link>
-                    <IncidentSwitcher />
-                </div>
-                <nav className="flex-1 space-y-0.5 overflow-y-auto p-2" aria-label="Main">
+        <div className="flex h-dvh w-full flex-col overflow-hidden bg-bg text-fg">
+            <header className="no-print flex h-11 shrink-0 items-stretch gap-6 border-b border-line bg-panel px-4">
+                <Link href="/" className="flex items-center gap-2 text-fg">
+                    <Mark className="h-4 w-4" />
+                    <span className="text-[14px] font-semibold tracking-[0.04em]">Aftermath</span>
+                </Link>
+                <nav className="flex items-stretch gap-1" aria-label="Main">
                     {NAV.map((item) => {
                         const href = navHref(item, activeIncidentId);
                         const current = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -56,14 +82,21 @@ export function Base({ children }: BaseProps) {
                             <Link
                                 key={item.href}
                                 href={href}
-                                className={`flex h-8 items-center px-2 text-[13px] ${current ? "text-fg" : "text-muted hover:text-fg"}`}
+                                aria-current={current ? "page" : undefined}
+                                className={`relative flex items-center px-2.5 text-[13px] transition-colors ${current ? "text-fg" : "text-muted hover:text-fg"}`}
                             >
-                                <span className="truncate">{item.label}</span>
+                                {item.label}
+                                {current && <span className="absolute inset-x-2.5 -bottom-px h-0.5 bg-accent" />}
                             </Link>
                         );
                     })}
                 </nav>
-            </aside>
+                <span className="my-3 w-px bg-line" />
+                <IncidentSwitcher />
+                <div className="ml-auto flex items-center">
+                    <Clock />
+                </div>
+            </header>
             <main className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</main>
         </div>
     );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Map } from "@/components/map/Map";
+import { Standby } from "@/components/base/Standby";
 import { loadBundledIncident, loadGraph, type IncidentBundle, type RoadGraph } from "@/lib/model/data/loader";
 import { useApp } from "@/lib/store/app";
 
@@ -31,9 +32,7 @@ export default function Home() {
         };
     }, [activeIncidentId]);
 
-    if (failed) {
-        return <p className="p-6 text-sm text-muted">Could not load {activeIncidentId}.</p>;
-    }
-    if (!bundle) return null;
+    if (failed) return <Standby incidentId={activeIncidentId} failed />;
+    if (!bundle) return <Standby incidentId={activeIncidentId} />;
     return <Map bundle={bundle} roads={roads} />;
 }

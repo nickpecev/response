@@ -11,52 +11,66 @@ import type { ExerciseInputs, InfrastructureAsset, Observation } from "@/lib/mod
 import type { IncidentBundle, InfrastructureDisruption, RoadGraph, StormTrackPoint } from "@/lib/model/data/loader";
 import { positionAt, simulate, type SimulatedUnit, type Simulation } from "@/lib/simulation/engine";
 import { EventList } from "@/components/map/EventList";
-import { UnitList } from "@/components/map/UnitList";
+import { SituationPanel } from "@/components/map/SituationPanel";
+import { formatClock, formatDay, formatWhen, localHour, roadClosures, stormCategory, stormPosition } from "@/components/map/incident";
 
 maplibre.setWorkerUrl("/vendor/maplibre-gl-worker.mjs");
 
-const DARK = "https://tiles.openfreemap.org/styles/dark";
+const BASEMAP = "https://tiles.openfreemap.org/styles/dark";
+const MONO = "IBM Plex Mono, ui-monospace, Menlo, monospace";
 
-const white: [number, number, number, number] = [242, 242, 242, 230];
-const faint: [number, number, number, number] = [242, 242, 242, 28];
-const line: [number, number, number, number] = [242, 242, 242, 120];
-const down: [number, number, number, number] = [214, 64, 64, 240];
-const closedOutline: [number, number, number, number] = [168, 168, 168, 210];
-const closedLine: [number, number, number, number] = [196, 72, 72, 230];
+const ink: [number, number, number, number] = [232, 232, 230, 230];
+const paper: [number, number, number, number] = [11, 12, 13, 255];
+const bright: [number, number, number, number] = [255, 255, 255, 255];
+const faint: [number, number, number, number] = [232, 232, 230, 20];
+const line: [number, number, number, number] = [232, 232, 230, 90];
+const down: [number, number, number, number] = [229, 83, 61, 240];
+const closedOutline: [number, number, number, number] = [11, 12, 13, 230];
+const closedLine: [number, number, number, number] = [229, 83, 61, 235];
 
 const SURGE: [number, number, number, number][] = [
-    [246, 214, 96, 120],
-    [232, 146, 58, 130],
-    [210, 82, 52, 140],
-    [168, 42, 58, 150],
-    [110, 36, 92, 160],
+    [246, 214, 96, 70],
+    [232, 146, 58, 80],
+    [210, 82, 52, 90],
+    [168, 42, 58, 100],
+    [110, 36, 92, 110],
 ];
 
 const WIND_FILL: [number, number, number, number][] = [
-    [242, 184, 75, 18],
-    [249, 115, 22, 22],
-    [240, 113, 113, 32],
+    [226, 160, 40, 5],
+    [232, 104, 22, 8],
+    [229, 83, 61, 14],
 ];
 
 const WIND_LINE: [number, number, number, number][] = [
-    [242, 184, 75, 150],
-    [249, 115, 22, 170],
-    [240, 113, 113, 210],
+    [226, 160, 40, 110],
+    [232, 104, 22, 140],
+    [229, 83, 61, 180],
 ];
 
+/** Distinct on a dark basemap, and kept away from the red signal hue. */
 const UNIT_COLORS: [number, number, number][] = [
-    [86, 180, 233],
-    [230, 159, 0],
-    [0, 196, 140],
-    [213, 94, 0],
-    [166, 140, 232],
-    [240, 112, 160],
-    [140, 196, 72],
-    [86, 140, 232],
-    [232, 196, 86],
-    [72, 196, 196],
-    [232, 120, 96],
-    [160, 160, 232],
+    [96, 170, 255],
+    [80, 210, 170],
+    [190, 150, 255],
+    [255, 140, 200],
+    [150, 210, 90],
+    [100, 210, 230],
+    [210, 190, 150],
+    [140, 150, 255],
+    [230, 120, 255],
+    [120, 190, 140],
+    [180, 180, 190],
+    [255, 190, 230],
+];
+
+const LANE_SEGMENT: [number, number, number][] = [
+    [72, 74, 78],
+    [246, 214, 96],
+    [232, 146, 58],
+    [210, 82, 52],
+    [168, 42, 58],
+    [110, 36, 92],
 ];
 
 function tripLines(unit: SimulatedUnit, time: number) {
@@ -91,16 +105,6 @@ function tripLines(unit: SimulatedUnit, time: number) {
     };
 }
 
-function formatWhen(iso: string, timeZone: string) {
-    return new Intl.DateTimeFormat("en-US", {
-        timeZone,
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        timeZoneName: "short",
-    }).format(new Date(iso));
-}
 
 type LayerId =
     | "imagery"
@@ -148,11 +152,6 @@ function layersIn(bundle: IncidentBundle) {
     return LAYER_LABELS.filter((layer) => present.has(layer.id));
 }
 
-function roadClosures(bundle: IncidentBundle): InfrastructureDisruption[] {
-    const modeled = bundle.exercise?.disruptions ?? [];
-    if (modeled.some((disruption) => disruption.path.length > 1)) return modeled;
-    return bundle.disruptions;
-}
 
 interface ClosedSegment {
     disruption: InfrastructureDisruption;
@@ -201,11 +200,6 @@ function observationReady(observation: Observation, time: number) {
     return true;
 }
 
-function mixRadius(before: number[] | undefined, after: number[] | undefined, fraction: number) {
-    if (!before) return after ?? [];
-    if (!after) return before;
-    return before.map((value, index) => value + ((after[index] ?? value) - value) * fraction);
-}
 
 function windRing(lon: number, lat: number, radiiNm: number[]) {
     if (!radiiNm.some((radius) => radius > 0)) return [];
@@ -223,35 +217,6 @@ function windRing(lon: number, lat: number, radiiNm: number[]) {
     return ring;
 }
 
-function stormPosition(points: StormTrackPoint[], time: number): StormTrackPoint | null {
-    if (!points.length || time < Date.parse(points[0].t)) return null;
-    const last = points[points.length - 1];
-    if (time >= Date.parse(last.t)) return last;
-
-    let index = 1;
-    while (index < points.length && Date.parse(points[index].t) < time) index += 1;
-    const before = points[index - 1];
-    const after = points[index];
-    const span = Date.parse(after.t) - Date.parse(before.t);
-    const fraction = span === 0 ? 0 : (time - Date.parse(before.t)) / span;
-    const radii = before.radii && after.radii
-        ? {
-            kt34: mixRadius(before.radii.kt34, after.radii.kt34, fraction),
-            kt50: mixRadius(before.radii.kt50, after.radii.kt50, fraction),
-            kt64: mixRadius(before.radii.kt64, after.radii.kt64, fraction),
-        }
-        : before.radii;
-    return {
-        ...before,
-        t: new Date(time).toISOString(),
-        lon: before.lon + (after.lon - before.lon) * fraction,
-        lat: before.lat + (after.lat - before.lat) * fraction,
-        windKt: Math.round(before.windKt + (after.windKt - before.windKt) * fraction),
-        pressureMb: Math.round(before.pressureMb + (after.pressureMb - before.pressureMb) * fraction),
-        radii,
-        interpolated: true,
-    };
-}
 
 function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: Record<LayerId, boolean>, time: number, simulation: Simulation | null, zoom: number): DeckLayer[] {
     const layers: DeckLayer[] = [];
@@ -298,7 +263,7 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                 data: bundle.evacZones as FeatureCollection,
                 filled: true,
                 stroked: true,
-                getFillColor: [242, 242, 242, 12],
+                getFillColor: [232, 232, 230, 10],
                 getLineColor: line,
                 lineWidthMinPixels: 1,
                 pickable: true,
@@ -311,7 +276,7 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
             new GeoJsonLayer({
                 id: "evac-routes",
                 data: bundle.evacRoutes as FeatureCollection,
-                getLineColor: [242, 242, 242, 80],
+                getLineColor: [232, 232, 230, 90],
                 lineWidthMinPixels: 1,
                 pickable: true,
             }),
@@ -326,7 +291,7 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                 id: "flood-restriction",
                 data: exercise.floodRestriction.rings.map((ring) => ({ ring, label: exercise.floodRestriction.label })),
                 getPolygon: (item: { ring: [number, number][] }) => item.ring,
-                getFillColor: [242, 242, 242, 18],
+                getFillColor: [232, 232, 230, 16],
                 getLineColor: line,
                 lineWidthMinPixels: 1,
                 stroked: true,
@@ -400,7 +365,7 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                 id: "storm-path",
                 data: [{ path }],
                 getPath: (item: { path: [number, number][] }) => item.path,
-                getColor: [242, 242, 242, 160],
+                getColor: [232, 232, 230, 170],
                 widthMinPixels: 1.5,
                 pickable: true,
             }),
@@ -410,7 +375,7 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                 id: "storm-fixes",
                 data: stormPoints,
                 getPosition: (point: StormTrackPoint) => [point.lon, point.lat],
-                getFillColor: white,
+                getFillColor: ink,
                 getRadius: (point: StormTrackPoint) => 2 + point.windKt / 40,
                 radiusUnits: "pixels",
                 pickable: true,
@@ -422,8 +387,8 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                     id: "storm-center",
                     data: [position],
                     getPosition: (point: StormTrackPoint) => [point.lon, point.lat],
-                    getFillColor: white,
-                    getLineColor: [0, 0, 0, 255],
+                    getFillColor: bright,
+                    getLineColor: paper,
                     stroked: true,
                     lineWidthMinPixels: 2,
                     getRadius: 7,
@@ -440,7 +405,7 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                 id: "observations",
                 data: observations,
                 getPosition: (observation: Observation) => [observation.location!.lon, observation.location!.lat],
-                getFillColor: white,
+                getFillColor: ink,
                 getRadius: 3,
                 radiusUnits: "pixels",
                 pickable: true,
@@ -456,9 +421,12 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                 getPosition: (observation: Observation) => [observation.location!.lon, observation.location!.lat],
                 getText: (observation: Observation) => String(observation.props.taskForce ?? ""),
                 getSize: 11,
-                getColor: white,
+                getColor: ink,
                 getPixelOffset: [0, 12],
-                fontFamily: "Inter, sans-serif",
+                fontFamily: MONO,
+                outlineWidth: 2,
+                outlineColor: paper,
+                fontSettings: { sdf: true },
             }),
         );
     }
@@ -469,8 +437,8 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                 id: "assets",
                 data: bundle.assets,
                 getPosition: (asset: InfrastructureAsset) => [asset.location.lon, asset.location.lat],
-                getFillColor: (asset: InfrastructureAsset) => (assetDown(asset, time) ? down : [242, 242, 242, 160]),
-                getLineColor: [0, 0, 0, 255],
+                getFillColor: (asset: InfrastructureAsset) => (assetDown(asset, time) ? down : [232, 232, 230, 150]),
+                getLineColor: paper,
                 stroked: true,
                 lineWidthMinPixels: 1,
                 getRadius: (asset: InfrastructureAsset) => (assetDown(asset, time) ? 5 : 2.5),
@@ -487,7 +455,7 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                 data: exercise.staging,
                 getPosition: (site: ExerciseInputs["staging"][number]) => [site.location.lon, site.location.lat],
                 getFillColor: (site: ExerciseInputs["staging"][number]) => (siteDown(site, time) ? [214, 64, 64, 80] : [0, 0, 0, 0]),
-                getLineColor: (site: ExerciseInputs["staging"][number]) => (siteDown(site, time) ? down : white),
+                getLineColor: (site: ExerciseInputs["staging"][number]) => (siteDown(site, time) ? down : ink),
                 stroked: true,
                 filled: false,
                 lineWidthMinPixels: 1.5,
@@ -514,8 +482,8 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                 id: "calls",
                 data: calls,
                 getPosition: (item: (typeof calls)[number]) => [item.call.location.lon, item.call.location.lat],
-                getFillColor: (item: (typeof calls)[number]) => (item.handled ? [138, 138, 138, 255] : [255, 255, 255, 255]),
-                getLineColor: [0, 0, 0, 255],
+                getFillColor: (item: (typeof calls)[number]) => (item.handled ? [85, 88, 93, 255] : item.call.priority === 1 ? down : [232, 232, 230, 255]),
+                getLineColor: paper,
                 stroked: true,
                 lineWidthMinPixels: 1,
                 getRadius: (item: (typeof calls)[number]) => (item.call.priority === 1 ? 5 : 3.5),
@@ -595,7 +563,7 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                     data: markers,
                     getPosition: (item: (typeof markers)[number]) => [item.lon, item.lat],
                     getFillColor: (item: (typeof markers)[number]) => [item.color[0], item.color[1], item.color[2], 255],
-                    getLineColor: [0, 0, 0, 255],
+                    getLineColor: paper,
                     stroked: true,
                     lineWidthMinPixels: 2,
                     getRadius: 7,
@@ -612,12 +580,12 @@ function buildLayers(bundle: IncidentBundle, roads: RoadGraph | null, visible: R
                     getPosition: (item: (typeof labels)[number]) => [item.lon, item.lat],
                     getText: (item: (typeof labels)[number]) => item.text,
                     getSize: 11,
-                    getColor: [242, 242, 242, 230],
+                    getColor: ink,
                     getPixelOffset: [0, -16],
-                    fontFamily: "JetBrains Mono, ui-monospace, monospace",
-                    fontWeight: 600,
+                    fontFamily: MONO,
+                    fontWeight: 500,
                     outlineWidth: 3,
-                    outlineColor: [0, 0, 0, 230],
+                    outlineColor: paper,
                     fontSettings: { sdf: true },
                     pickable: false,
                 }),
@@ -760,36 +728,38 @@ const INITIAL_LAYERS: Record<LayerId, boolean> = {
 };
 
 const SPEEDS = [1, 5, 15, 60, 240] as const;
-const HEADER = 18;
-const LANE_LABEL = 76;
+const HEADER = 20;
+const LANE_LABEL = 68;
+const MAX_CLOSURE_ROWS = 3;
 
-function stormCategory(windKt: number) {
-    if (windKt >= 137) return 5;
-    if (windKt >= 113) return 4;
-    if (windKt >= 96) return 3;
-    if (windKt >= 83) return 2;
-    if (windKt >= 64) return 1;
-    return 0;
+function Icon({ d, className = "" }: { d: string; className?: string }) {
+    return (
+        <svg viewBox="0 0 12 12" className={`h-3 w-3 ${className}`} aria-hidden>
+            <path d={d} fill="currentColor" />
+        </svg>
+    );
 }
 
-function formatDay(ms: number, timeZone: string) {
-    return new Intl.DateTimeFormat("en-US", { timeZone, month: "short", day: "numeric" }).format(ms);
-}
+const ICONS = {
+    first: "M2 2h1.5v8H2zM10 2v8L4 6z",
+    back: "M9.5 2v8L3.5 6z",
+    play: "M3 1.5v9L10.5 6z",
+    pause: "M2.5 2h2.5v8H2.5zM7 2h2.5v8H7z",
+    forward: "M2.5 2v8l6-4z",
+    last: "M8.5 2H10v8H8.5zM2 2v8l6-4z",
+};
 
-function localHour(ms: number, timeZone: string) {
-    const hour = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hourCycle: "h23" }).format(new Date(ms));
-    return Number(hour) % 24;
-}
-
-function EventStrip({
+function Timeline({
     bundle,
     start,
     end,
     time,
     timeZone,
     playing,
+    speed,
     onTime,
     onToggle,
+    onSpeed,
 }: {
     bundle: IncidentBundle;
     start: number;
@@ -797,15 +767,17 @@ function EventStrip({
     time: number;
     timeZone: string;
     playing: boolean;
+    speed: number;
     onTime: (time: number) => void;
     onToggle: () => void;
+    onSpeed: (speed: number) => void;
 }) {
     const frame = useRef<HTMLDivElement>(null);
     const drag = useRef(false);
     const [width, setWidth] = useState(0);
     const [hover, setHover] = useState<number | null>(null);
     const span = Math.max(1, end - start);
-    const track = Math.max(1, width - LANE_LABEL);
+    const track = Math.max(1, width - LANE_LABEL - 12);
     const x = (ms: number) => ((ms - start) / span) * track;
 
     const storm = useMemo(() => {
@@ -820,12 +792,14 @@ function EventStrip({
         () => bundle.timeline.filter((event) => event.source?.sourceId !== "noaa-hurdat2"),
         [bundle.timeline],
     );
-    const closures = roadClosures(bundle).filter((disruption) => disruption.path.length > 1);
-    const closureLayout = closures.map((disruption) => {
-        const opened = Date.parse(disruption.start);
-        const closed = disruption.end ? Date.parse(disruption.end) : end;
-        return { disruption, opened, closed, row: 0 };
-    });
+    const closureLayout = roadClosures(bundle)
+        .filter((disruption) => disruption.path.length > 1)
+        .map((disruption) => ({
+            disruption,
+            opened: Date.parse(disruption.start),
+            closed: disruption.end ? Date.parse(disruption.end) : end,
+            row: 0,
+        }));
     const lanes: { opened: number; closed: number }[][] = [];
     for (const item of closureLayout) {
         let row = lanes.findIndex((lane) => lane.every((other) => other.closed <= item.opened || item.closed <= other.opened));
@@ -834,18 +808,17 @@ function EventStrip({
             lanes.push([]);
         }
         lanes[row].push(item);
-        item.row = row;
+        item.row = Math.min(row, MAX_CLOSURE_ROWS - 1);
     }
-    const stormH = storm.length ? 18 : 0;
-    const eventsH = events.length ? 18 : 0;
-    const closuresH = closureLayout.length ? lanes.length * 8 + 8 : 0;
-    const height = HEADER + stormH + eventsH + closuresH + 4;
-    let cursor = HEADER;
-    const stormY = cursor;
-    cursor += stormH;
-    const eventsY = cursor;
-    cursor += eventsH;
-    const closuresY = cursor;
+    const closureRows = Math.min(lanes.length, MAX_CLOSURE_ROWS);
+
+    const stormH = storm.length ? 16 : 0;
+    const eventsH = events.length ? 20 : 0;
+    const closuresH = closureLayout.length ? closureRows * 6 + 10 : 0;
+    const height = Math.max(84, HEADER + stormH + eventsH + closuresH + 4);
+    const stormY = HEADER;
+    const eventsY = stormY + stormH;
+    const closuresY = eventsY + eventsH;
 
     useEffect(() => {
         const node = frame.current;
@@ -857,21 +830,21 @@ function EventStrip({
     }, []);
 
     const ticks = useMemo(() => {
-        const marks: { t: number; major: boolean; label: string }[] = [];
-        let cursor = Math.ceil(start / 3600_000) * 3600_000;
-        for (; cursor <= end; cursor += 3600_000) {
+        const marks: { t: number; major: boolean }[] = [];
+        for (let cursor = Math.ceil(start / 3600_000) * 3600_000; cursor <= end; cursor += 3600_000) {
             const hour = localHour(cursor, timeZone);
-            if (hour !== 0 && hour !== 12) continue;
-            marks.push({ t: cursor, major: hour === 0, label: hour === 0 ? formatDay(cursor, timeZone) : "" });
+            if (hour === 0 || hour === 12) marks.push({ t: cursor, major: hour === 0 });
         }
         return marks;
     }, [start, end, timeZone]);
 
-    if (!storm.length && !events.length && !closureLayout.length) return null;
+    function clamp(next: number) {
+        return Math.min(end, Math.max(start, next));
+    }
 
     function seek(next: number, pause: boolean) {
         if (pause && playing) onToggle();
-        onTime(Math.min(end, Math.max(start, next)));
+        onTime(clamp(next));
     }
 
     function timeAt(clientX: number, node: SVGSVGElement) {
@@ -880,256 +853,211 @@ function EventStrip({
         return start + (Math.min(track, Math.max(0, px)) / track) * span;
     }
 
-    const dateLabels: { t: number; label: string }[] = [];
-    let lastLabel = -56;
+    const dateLabels: number[] = [];
+    let lastLabel = -60;
     for (const tick of ticks) {
-        if (!tick.label) continue;
+        if (!tick.major) continue;
         const left = x(tick.t);
-        if (left < lastLabel + 56) continue;
+        if (left < lastLabel + 60) continue;
         lastLabel = left;
-        dateLabels.push({ t: tick.t, label: tick.label });
+        dateLabels.push(tick.t);
     }
 
+    const ghost = "flex h-7 w-7 items-center justify-center rounded-sm text-muted transition-colors hover:bg-raised hover:text-fg";
+    const head = x(Math.min(time, end));
+    const flagW = 42;
+    const flagX = Math.min(track - flagW, Math.max(0, head - flagW / 2));
+
     return (
-        <div ref={frame} className="relative border-t border-line">
-            <svg
-                width={width || "100%"}
-                height={height}
-                className="block"
-                role="slider"
-                aria-label="Incident events"
-                aria-valuemin={start}
-                aria-valuemax={end}
-                aria-valuenow={time}
-                aria-valuetext={formatWhen(new Date(time).toISOString(), timeZone)}
-                tabIndex={0}
-                onPointerDown={(event) => {
-                    drag.current = true;
-                    event.currentTarget.setPointerCapture(event.pointerId);
-                    seek(timeAt(event.clientX, event.currentTarget), true);
-                }}
-                onPointerMove={(event) => {
-                    const next = timeAt(event.clientX, event.currentTarget);
-                    const rect = event.currentTarget.getBoundingClientRect();
-                    setHover(event.clientX - rect.left >= LANE_LABEL ? next : null);
-                    if (drag.current) onTime(Math.min(end, Math.max(start, next)));
-                }}
-                onPointerUp={() => {
-                    drag.current = false;
-                }}
-                onPointerLeave={() => setHover(null)}
-                onKeyDown={(event) => {
-                    const step = event.shiftKey ? 60 * 60_000 : 15 * 60_000;
-                    if (event.key === "ArrowRight") seek(time + step, true);
-                    if (event.key === "ArrowLeft") seek(time - step, true);
-                }}
-            >
-                {storm.length > 0 && (
-                    <text x={10} y={stormY + stormH / 2 + 3} fontSize={10} fill="#8a8a8a" fontFamily="Inter, sans-serif">
-                        Storm
-                    </text>
-                )}
-                {events.length > 0 && (
-                    <text x={10} y={eventsY + eventsH / 2 + 3} fontSize={10} fill="#8a8a8a" fontFamily="Inter, sans-serif">
-                        Events
-                    </text>
-                )}
-                {closureLayout.length > 0 && (
-                    <text x={10} y={closuresY + closuresH / 2 + 3} fontSize={10} fill="#8a8a8a" fontFamily="Inter, sans-serif">
-                        Closures
-                    </text>
-                )}
-                <g transform={`translate(${LANE_LABEL},0)`}>
-                    <clipPath id="event-strip-clip">
-                        <rect x={0} y={0} width={track} height={height} />
-                    </clipPath>
-                    <g clipPath="url(#event-strip-clip)">
-                    {ticks.map((tick) => (
-                        <line key={tick.t} x1={x(tick.t)} x2={x(tick.t)} y1={HEADER} y2={height} stroke={tick.major ? "#222" : "#141414"} />
-                    ))}
-                    {dateLabels.map((tick) => (
-                        <text key={tick.t} x={x(tick.t) + 4} y={12} fontSize={10} fill="#8a8a8a" fontFamily="Inter, sans-serif">
-                            {tick.label}
-                        </text>
-                    ))}
-                    {stormH > 0 && <line x1={0} x2={track} y1={stormY} y2={stormY} stroke="#222" />}
-                    {eventsH > 0 && <line x1={0} x2={track} y1={eventsY} y2={eventsY} stroke="#222" />}
-                    {closuresH > 0 && <line x1={0} x2={track} y1={closuresY} y2={closuresY} stroke="#222" />}
-                    {bundle.exercise?.suspension && (
-                        <rect
-                            x={x(Date.parse(bundle.exercise.suspension.start))}
-                            width={Math.max(1, x(Date.parse(bundle.exercise.suspension.end)) - x(Date.parse(bundle.exercise.suspension.start)))}
-                            y={HEADER}
-                            height={height - HEADER}
-                            fill="#f2f2f2"
-                            opacity={0.05}
-                        >
-                            <title>{bundle.exercise.suspension.description}</title>
-                        </rect>
-                    )}
-                    {storm.map((segment) => {
-                        const [red, green, blue] = segment.category === 0 ? [92, 92, 92] : SURGE[segment.category - 1];
-                        return (
-                            <rect
-                                key={segment.t0}
-                                x={x(segment.t0)}
-                                width={Math.max(1, x(segment.t1) - x(segment.t0))}
-                                y={stormY + 5}
-                                height={8}
-                                fill={`rgb(${red} ${green} ${blue})`}
+        <div className="col-span-3 flex border-t border-line bg-panel">
+            <div className="flex w-[280px] shrink-0 flex-col justify-center gap-2.5 border-r border-line px-4 py-3">
+                <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => seek(start, false)} className={ghost} aria-label="Jump to start" title="Jump to start">
+                        <Icon d={ICONS.first} />
+                    </button>
+                    <button type="button" onClick={() => seek(time - 15 * 60_000, false)} className={ghost} aria-label="Back 15 minutes" title="Back 15 minutes">
+                        <Icon d={ICONS.back} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onToggle}
+                        className="mx-1 flex h-7 w-10 items-center justify-center rounded-sm bg-accent text-bg transition-colors hover:bg-accent/85"
+                        aria-label={playing ? "Pause" : "Play"}
+                        title={playing ? "Pause (Space)" : "Play (Space)"}
+                    >
+                        <Icon d={playing ? ICONS.pause : ICONS.play} />
+                    </button>
+                    <button type="button" onClick={() => seek(time + 15 * 60_000, false)} className={ghost} aria-label="Forward 15 minutes" title="Forward 15 minutes">
+                        <Icon d={ICONS.forward} />
+                    </button>
+                    <button type="button" onClick={() => seek(end, false)} className={ghost} aria-label="Jump to end" title="Jump to end">
+                        <Icon d={ICONS.last} />
+                    </button>
+                    <span className="ml-auto text-[11px] text-dim">
+                        <kbd className="font-sans">Space</kbd>
+                    </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-dim">Speed</span>
+                    <div className="flex rounded-sm bg-raised p-0.5" role="group" aria-label="Playback speed">
+                        {SPEEDS.map((value) => (
+                            <button
+                                key={value}
+                                type="button"
+                                onClick={() => onSpeed(value)}
+                                aria-pressed={speed === value}
+                                className={`rounded-[2px] px-2 py-0.5 text-[11px] tabular-nums transition-colors ${speed === value ? "bg-line text-fg" : "text-muted hover:text-fg"}`}
+                                title={value === 240 ? "4 incident-hours per second" : `${value} incident-minute${value === 1 ? "" : "s"} per second`}
                             >
-                                <title>{segment.category === 0 ? "Below hurricane strength" : `Category ${segment.category}`}</title>
-                            </rect>
-                        );
-                    })}
-                    {events.map((event) => (
-                        <rect
-                            key={event.id}
-                            x={x(Date.parse(event.t)) - 1}
-                            width={event.importance === 1 ? 3 : 2}
-                            y={eventsY + (event.importance === 1 ? 3 : 5)}
-                            height={event.importance === 1 ? 12 : 8}
-                            fill={event.importance === 1 ? "#f2f2f2" : "#8a8a8a"}
-                            onPointerDown={(eventPointer) => {
-                                eventPointer.stopPropagation();
-                                seek(Date.parse(event.t), true);
-                            }}
-                        >
-                            <title>{`${formatWhen(event.t, timeZone)} — ${event.title}`}</title>
-                        </rect>
-                    ))}
-                    {closureLayout.map((item) => (
-                        <rect
-                            key={item.disruption.id}
-                            x={x(item.opened)}
-                            width={Math.max(2, x(item.closed) - x(item.opened))}
-                            y={closuresY + 6 + item.row * 8}
-                            height={5}
-                            fill="#c44848"
-                            opacity={0.9}
-                            onPointerDown={(eventPointer) => {
-                                eventPointer.stopPropagation();
-                                seek(item.opened, true);
-                            }}
-                        >
-                            <title>{`${item.disruption.name} — from ${formatWhen(item.disruption.start, timeZone)}`}</title>
-                        </rect>
-                    ))}
-                    {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={0} y2={height} stroke="#5c5c5c" />}
-                    <line x1={x(time)} x2={x(time)} y1={0} y2={height} stroke="#f2f2f2" />
-                    </g>
-                </g>
-            </svg>
-            {hover !== null && (
-                <div
-                    className="pointer-events-none absolute top-0 border border-line bg-bg px-1.5 py-0.5 text-xs text-fg"
-                    style={{ left: Math.min(width - 140, LANE_LABEL + x(hover) + 8) }}
-                >
-                    {formatWhen(new Date(hover).toISOString(), timeZone)}
+                                {value}×
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            )}
-        </div>
-    );
-}
-
-function Playback({
-    bundle,
-    start,
-    end,
-    time,
-    playing,
-    speed,
-    timeZone,
-    onTime,
-    onToggle,
-    onSpeed,
-}: {
-    bundle: IncidentBundle;
-    start: number;
-    end: number;
-    time: number;
-    playing: boolean;
-    speed: number;
-    timeZone: string;
-    onTime: (time: number) => void;
-    onToggle: () => void;
-    onSpeed: (speed: number) => void;
-}) {
-    function jump(next: number) {
-        onTime(Math.min(end, Math.max(start, next)));
-    }
-
-    return (
-        <div className="absolute inset-x-0 bottom-0 z-10 border-t border-line bg-bg">
-            <div className="flex items-center gap-2 px-3 py-1.5">
-                <button type="button" onClick={() => jump(start)} className="flex h-8 w-8 shrink-0 items-center justify-center border border-line" aria-label="Jump to start">
-                    <span className="flex items-center">
-                        <span className="h-3 w-px bg-fg" />
-                        <span className="border-y-[5px] border-r-[6px] border-y-transparent border-r-fg" />
-                    </span>
-                </button>
-                <button type="button" onClick={() => jump(time - 15 * 60_000)} className="flex h-8 w-8 shrink-0 items-center justify-center border border-line" aria-label="Back 15 minutes">
-                    <span className="border-y-[5px] border-r-[7px] border-y-transparent border-r-fg" />
-                </button>
-                <button type="button" onClick={onToggle} className="flex h-8 w-8 shrink-0 items-center justify-center border border-line" aria-label={playing ? "Pause" : "Play"}>
-                    {playing ? (
-                        <span className="flex gap-1">
-                            <span className="h-3 w-0.5 bg-fg" />
-                            <span className="h-3 w-0.5 bg-fg" />
-                        </span>
-                    ) : (
-                        <span className="ml-0.5 border-y-[5px] border-l-[7px] border-y-transparent border-l-fg" />
-                    )}
-                </button>
-                <button type="button" onClick={() => jump(time + 15 * 60_000)} className="flex h-8 w-8 shrink-0 items-center justify-center border border-line" aria-label="Forward 15 minutes">
-                    <span className="border-y-[5px] border-l-[7px] border-y-transparent border-l-fg" />
-                </button>
-                <button type="button" onClick={() => jump(end)} className="flex h-8 w-8 shrink-0 items-center justify-center border border-line" aria-label="Jump to end">
-                    <span className="flex items-center">
-                        <span className="border-y-[5px] border-l-[6px] border-y-transparent border-l-fg" />
-                        <span className="h-3 w-px bg-fg" />
-                    </span>
-                </button>
-                <div className="flex shrink-0 border border-line" role="group" aria-label="Playback speed">
-                    {SPEEDS.map((value) => (
-                        <button
-                            key={value}
-                            type="button"
-                            onClick={() => onSpeed(value)}
-                            className={`px-2 py-1 text-xs ${speed === value ? "bg-fg text-bg" : "text-dim"}`}
-                            title={value === 240 ? "4 incident-hours per second" : `${value} incident-minute${value === 1 ? "" : "s"} per second`}
-                        >
-                            {value === 240 ? "Overview" : `${value}×`}
-                        </button>
-                    ))}
-                </div>
-                <span className="ml-auto shrink-0 text-xs text-fg">{formatWhen(new Date(time).toISOString(), timeZone)}</span>
             </div>
-            <div className="px-3 pb-1">
-                <input
-                    type="range"
-                    min={start}
-                    max={end}
-                    step={1_000}
-                    value={Math.min(time, end)}
-                    onPointerDown={() => {
-                        if (playing) onToggle();
+            <div ref={frame} className="relative min-w-0 flex-1 cursor-crosshair select-none">
+                <svg
+                    width={width || "100%"}
+                    height={height}
+                    className="block outline-none focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-accent"
+                    role="slider"
+                    aria-label="Incident timeline"
+                    aria-valuemin={start}
+                    aria-valuemax={end}
+                    aria-valuenow={time}
+                    aria-valuetext={formatWhen(time, timeZone)}
+                    tabIndex={0}
+                    onPointerDown={(event) => {
+                        drag.current = true;
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                        seek(timeAt(event.clientX, event.currentTarget), true);
                     }}
-                    onChange={(event) => onTime(Number(event.target.value))}
-                    className="block h-6 w-full accent-fg"
-                    aria-label="Time"
-                />
+                    onPointerMove={(event) => {
+                        const next = timeAt(event.clientX, event.currentTarget);
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        setHover(event.clientX - rect.left >= LANE_LABEL ? next : null);
+                        if (drag.current) onTime(clamp(next));
+                    }}
+                    onPointerUp={() => {
+                        drag.current = false;
+                    }}
+                    onPointerLeave={() => setHover(null)}
+                    onKeyDown={(event) => {
+                        const step = event.shiftKey ? 60 * 60_000 : 15 * 60_000;
+                        if (event.key === "ArrowRight") seek(time + step, true);
+                        if (event.key === "ArrowLeft") seek(time - step, true);
+                    }}
+                >
+                    {stormH > 0 && (
+                        <text x={14} y={stormY + stormH / 2 + 3} className="fill-dim font-mono text-[9px] tracking-[0.08em]">
+                            STORM
+                        </text>
+                    )}
+                    {eventsH > 0 && (
+                        <text x={14} y={eventsY + eventsH / 2 + 3} className="fill-dim font-mono text-[9px] tracking-[0.08em]">
+                            EVENTS
+                        </text>
+                    )}
+                    {closuresH > 0 && (
+                        <text x={14} y={closuresY + closuresH / 2 + 3} className="fill-dim font-mono text-[9px] tracking-[0.08em]">
+                            CLOSURES
+                        </text>
+                    )}
+                    <g transform={`translate(${LANE_LABEL},0)`}>
+                        <clipPath id="timeline-clip">
+                            <rect x={0} y={0} width={track} height={height} />
+                        </clipPath>
+                        <g clipPath="url(#timeline-clip)">
+                            <rect x={0} y={HEADER} width={Math.max(0, head)} height={height - HEADER} className="fill-fg" opacity={0.025} />
+                            {ticks.map((tick) => (
+                                <line key={tick.t} x1={x(tick.t)} x2={x(tick.t)} y1={tick.major ? 4 : HEADER} y2={height} className={tick.major ? "stroke-line" : "stroke-rule"} />
+                            ))}
+                            {dateLabels.map((t) => (
+                                <text key={t} x={x(t) + 5} y={13} className="fill-dim font-mono text-[9px] tracking-[0.08em]">
+                                    {formatDay(t, timeZone).toUpperCase()}
+                                </text>
+                            ))}
+                            {bundle.exercise?.suspension && (
+                                <rect
+                                    x={x(Date.parse(bundle.exercise.suspension.start))}
+                                    width={Math.max(1, x(Date.parse(bundle.exercise.suspension.end)) - x(Date.parse(bundle.exercise.suspension.start)))}
+                                    y={HEADER}
+                                    height={height - HEADER}
+                                    className="fill-fg"
+                                    opacity={0.05}
+                                >
+                                    <title>{bundle.exercise.suspension.description}</title>
+                                </rect>
+                            )}
+                            {storm.map((segment) => {
+                                const [red, green, blue] = LANE_SEGMENT[segment.category];
+                                return (
+                                    <rect
+                                        key={segment.t0}
+                                        x={x(segment.t0)}
+                                        width={Math.max(1, x(segment.t1) - x(segment.t0))}
+                                        y={stormY + stormH / 2 - 2}
+                                        height={4}
+                                        fill={`rgb(${red} ${green} ${blue})`}
+                                    >
+                                        <title>{segment.category === 0 ? "Below hurricane strength" : `Category ${segment.category}`}</title>
+                                    </rect>
+                                );
+                            })}
+                            {events.map((event) => {
+                                const major = event.importance === 1;
+                                return (
+                                    <rect
+                                        key={event.id}
+                                        x={x(Date.parse(event.t)) - 0.5}
+                                        width={major ? 2 : 1}
+                                        y={eventsY + (major ? 4 : 7)}
+                                        height={major ? 12 : 6}
+                                        className={`cursor-pointer ${major ? "fill-fg" : "fill-muted"}`}
+                                        onPointerDown={(pointer) => {
+                                            pointer.stopPropagation();
+                                            seek(Date.parse(event.t), true);
+                                        }}
+                                    >
+                                        <title>{`${formatWhen(event.t, timeZone)} — ${event.title}`}</title>
+                                    </rect>
+                                );
+                            })}
+                            {closureLayout.map((item) => (
+                                <rect
+                                    key={item.disruption.id}
+                                    x={x(item.opened)}
+                                    width={Math.max(2, x(item.closed) - x(item.opened))}
+                                    y={closuresY + 5 + item.row * 6}
+                                    height={3}
+                                    className="cursor-pointer fill-signal"
+                                    opacity={0.75}
+                                    onPointerDown={(pointer) => {
+                                        pointer.stopPropagation();
+                                        seek(item.opened, true);
+                                    }}
+                                >
+                                    <title>{`${item.disruption.name} — from ${formatWhen(item.disruption.start, timeZone)}`}</title>
+                                </rect>
+                            ))}
+                            {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={HEADER} y2={height} className="stroke-muted" strokeDasharray="2 3" />}
+                            <line x1={head} x2={head} y1={HEADER - 2} y2={height} className="stroke-accent" />
+                            <rect x={flagX} y={3} width={flagW} height={14} rx={2} className="fill-accent" />
+                            <text x={flagX + flagW / 2} y={13} textAnchor="middle" className="fill-bg font-mono text-[10px] font-medium">
+                                {formatClock(time, timeZone)}
+                            </text>
+                        </g>
+                    </g>
+                </svg>
+                {hover !== null && (
+                    <div
+                        className="pointer-events-none absolute bottom-2 rounded-sm bg-raised px-2 py-1 text-[11px] whitespace-nowrap text-fg shadow-[0_6px_20px_rgba(0,0,0,0.5)] ring-1 ring-line"
+                        style={{ left: Math.min(width - 150, LANE_LABEL + x(hover) + 8) }}
+                    >
+                        {formatWhen(hover, timeZone)}
+                    </div>
+                )}
             </div>
-            <EventStrip
-                bundle={bundle}
-                start={start}
-                end={end}
-                time={time}
-                timeZone={timeZone}
-                playing={playing}
-                onTime={onTime}
-                onToggle={onToggle}
-            />
         </div>
     );
 }
@@ -1138,6 +1066,7 @@ export function Map({ bundle, roads }: MapProps) {
     const [tip, setTip] = useState<HoverTip | null>(null);
     const mapRef = useRef<MapRef>(null);
     const [visible, setVisible] = useState(INITIAL_LAYERS);
+    const [layersOpen, setLayersOpen] = useState(false);
     const [time, setTime] = useState(() => initialTime(bundle));
     const [playing, setPlaying] = useState(false);
     const [speed, setSpeed] = useState(15);
@@ -1148,13 +1077,16 @@ export function Map({ bundle, roads }: MapProps) {
     const simulation = useMemo(() => (bundle.exercise ? simulate(bundle.exercise, roads) : null), [bundle.exercise, roads]);
     const layers = useMemo(() => buildLayers(bundle, roads, visible, time, simulation, zoom), [bundle, roads, visible, time, simulation, zoom]);
     const [longitude, latitude] = bundle.manifest.center;
+    const [center, setCenter] = useState({ lon: longitude, lat: latitude });
     const start = Date.parse(bundle.manifest.timeRange.start);
     const end = Date.parse(bundle.manifest.timeRange.end);
+    const timeZone = bundle.manifest.timezone;
 
     useEffect(() => {
         setTime(initialTime(bundle));
         setPlaying(false);
         setZoom(bundle.manifest.zoom);
+        setCenter({ lon: bundle.manifest.center[0], lat: bundle.manifest.center[1] });
     }, [bundle]);
 
     useEffect(() => {
@@ -1193,6 +1125,7 @@ export function Map({ bundle, roads }: MapProps) {
 
     useEffect(() => {
         function onKey(event: KeyboardEvent) {
+            if (event.key === "Escape") setLayersOpen(false);
             if (event.repeat || event.key !== " ") return;
             const target = event.target;
             if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
@@ -1207,7 +1140,7 @@ export function Map({ bundle, roads }: MapProps) {
     }, [playing, time, start, end]);
 
     const day = new Intl.DateTimeFormat("en-CA", {
-        timeZone: bundle.manifest.timezone,
+        timeZone,
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
@@ -1234,98 +1167,131 @@ export function Map({ bundle, roads }: MapProps) {
     function focusUnit(lon: number, lat: number) {
         const map = mapRef.current;
         if (!map) return;
-        const canvas = map.getCanvas();
         map.flyTo({
             center: [lon, lat],
             zoom: Math.max(map.getZoom(), 12),
-            padding: {
-                top: 40,
-                right: 24,
-                bottom: Math.min(220, canvas.height * 0.35),
-                left: Math.min(250, canvas.width * 0.4),
-            },
+            padding: { top: 40, right: 40, bottom: 40, left: 40 },
             duration: 700,
         });
     }
 
+    const activeLayers = options.filter((layer) => visible[layer.id as LayerId]).length;
+
     return (
-        <div className="flex h-full w-full">
-            <div className="map-frame relative min-h-0 min-w-0 flex-1" onMouseLeave={() => setTip(null)}>
-            <div className="absolute top-3 left-3 z-10 border border-line bg-bg px-2 py-1 text-xs text-dim">
-                <a href="https://openfreemap.org" target="_blank" rel="noreferrer" className="text-fg">
-                    OpenFreeMap
-                </a>
-                {", "}
-                <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="hover:text-fg">
-                    OpenStreetMap
-                </a>
-            </div>
-            <MapCanvas
-                ref={mapRef}
-                mapLib={maplibre}
-                initialViewState={{ longitude, latitude, zoom: bundle.manifest.zoom }}
-                onMove={(event) => {
-                    const next = event.viewState.zoom;
-                    setZoom((current) => (Math.abs(current - next) < 0.05 ? current : next));
-                }}
-                mapStyle={DARK}
-                onLoad={() => setMapReady(true)}
-                attributionControl={{ compact: true }}
-                style={{ width: "100%", height: "100%" }}
-            >
-                {visible.imagery && bundle.imagery.filter((imagery) => imagery.acquiredDate <= day).map((imagery) => (
-                    <Source
-                        key={imagery.id}
-                        id={imagery.id}
-                        type="raster"
-                        tiles={[imagery.tiles]}
-                        tileSize={256}
-                        bounds={imagery.bounds}
-                        attribution={imagery.attribution}
+        <div className="grid h-full w-full grid-cols-[280px_minmax(0,1fr)_300px] grid-rows-[minmax(0,1fr)_auto]">
+            <SituationPanel bundle={bundle} simulation={simulation} time={time} colors={UNIT_COLORS} onFocus={focusUnit} />
+            <div className="map-frame relative min-h-0 min-w-0" onMouseLeave={() => setTip(null)}>
+                <MapCanvas
+                    ref={mapRef}
+                    mapLib={maplibre}
+                    initialViewState={{ longitude, latitude, zoom: bundle.manifest.zoom }}
+                    onMove={(event) => {
+                        const next = event.viewState.zoom;
+                        setZoom((current) => (Math.abs(current - next) < 0.05 ? current : next));
+                        const { longitude: lon, latitude: lat } = event.viewState;
+                        setCenter((current) => (Math.abs(current.lon - lon) < 0.0005 && Math.abs(current.lat - lat) < 0.0005 ? current : { lon, lat }));
+                    }}
+                    mapStyle={BASEMAP}
+                    onLoad={() => setMapReady(true)}
+                    attributionControl={{ compact: true }}
+                    style={{ width: "100%", height: "100%" }}
+                >
+                    {visible.imagery && bundle.imagery.filter((imagery) => imagery.acquiredDate <= day).map((imagery) => (
+                        <Source
+                            key={imagery.id}
+                            id={imagery.id}
+                            type="raster"
+                            tiles={[imagery.tiles]}
+                            tileSize={256}
+                            bounds={imagery.bounds}
+                            attribution={imagery.attribution}
+                        >
+                            <Layer id={`${imagery.id}-layer`} type="raster" paint={{ "raster-opacity": 0.85 }} />
+                        </Source>
+                    ))}
+                    {mapReady && <DeckOverlay layers={layers} onHover={onHover} getCursor={({ isHovering }) => (isHovering ? "pointer" : "grab")} />}
+                    <NavigationControl position="top-right" showCompass={false} />
+                    <ScaleControl position="bottom-right" unit="imperial" />
+                </MapCanvas>
+
+                <div className="absolute top-[78px] right-[10px] z-10">
+                    <button
+                        type="button"
+                        onClick={() => setLayersOpen((open) => !open)}
+                        aria-expanded={layersOpen}
+                        aria-label="Map layers"
+                        title="Map layers"
+                        className={`flex h-[29px] w-[29px] items-center justify-center rounded-[2px] bg-raised shadow-[0_1px_0_rgba(0,0,0,0.4)] transition-colors ${layersOpen ? "text-accent" : "text-fg hover:text-accent"}`}
                     >
-                        <Layer id={`${imagery.id}-layer`} type="raster" paint={{ "raster-opacity": 0.85 }} />
-                    </Source>
-                ))}
-                {mapReady && <DeckOverlay layers={layers} onHover={onHover} getCursor={({ isHovering }) => (isHovering ? "pointer" : "grab")} />}
-                <NavigationControl position="top-right" showCompass={false} />
-                <ScaleControl position="bottom-right" unit="imperial" />
-            </MapCanvas>
-            <UnitList
-                units={simulation?.units ?? []}
-                colors={UNIT_COLORS}
-                time={time}
-                onSelect={focusUnit}
-                layers={options}
-                visible={visible}
-                onToggle={(id) => toggle(id as LayerId)}
-            />
-            <Playback
+                        <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden>
+                            <path d="M8 2 15 5.5 8 9 1 5.5Z" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+                            <path d="M1 8.5 8 12l7-3.5M1 11.5 8 15l7-3.5" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+                        </svg>
+                    </button>
+                    {layersOpen && (
+                        <div className="absolute top-0 right-9 w-56 rounded-sm bg-raised py-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.55)] ring-1 ring-line">
+                            <div className="flex items-baseline justify-between px-3 pt-1 pb-2">
+                                <span className="caps text-dim">Layers</span>
+                                <span className="text-[11px] tabular-nums text-dim">
+                                    {activeLayers}/{options.length}
+                                </span>
+                            </div>
+                            {options.map((layer) => {
+                                const on = visible[layer.id as LayerId];
+                                return (
+                                    <button
+                                        key={layer.id}
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={on}
+                                        onClick={() => toggle(layer.id as LayerId)}
+                                        className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-[13px] transition-colors hover:bg-line/60 ${on ? "text-fg" : "text-muted"}`}
+                                    >
+                                        {layer.label}
+                                        <span className={`relative h-3 w-5 rounded-full transition-colors ${on ? "bg-accent" : "bg-line"}`}>
+                                            <span className={`absolute top-0.5 h-2 w-2 rounded-full bg-bg transition-all ${on ? "left-2.5" : "left-0.5"}`} />
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                <div className="pointer-events-none absolute bottom-2 left-3 z-10 font-mono text-[10px] tabular-nums text-muted [text-shadow:0_1px_2px_#000]">
+                    {Math.abs(center.lat).toFixed(3)}°{center.lat >= 0 ? "N" : "S"}
+                    {"  "}
+                    {Math.abs(center.lon).toFixed(3)}°{center.lon >= 0 ? "E" : "W"}
+                    <span className="ml-3 text-dim">z{zoom.toFixed(1)}</span>
+                </div>
+
+                {tip && (
+                    <div
+                        className="pointer-events-none absolute z-20 max-w-xs rounded-sm bg-raised px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.55)] ring-1 ring-line"
+                        style={{ left: tip.x + 14, top: tip.y + 14 }}
+                    >
+                        <div className="text-[13px] font-medium text-fg">{tip.title}</div>
+                        {tip.lines.map((item) => (
+                            <div key={item} className="mt-0.5 text-[11px] leading-snug text-muted first-letter:uppercase">
+                                {item}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+            <EventList events={bundle.timeline} time={time} timeZone={timeZone} onSelect={showEvent} />
+            <Timeline
                 bundle={bundle}
                 start={start}
                 end={end}
                 time={time}
+                timeZone={timeZone}
                 playing={playing}
                 speed={speed}
-                timeZone={bundle.manifest.timezone}
                 onTime={setTime}
                 onToggle={togglePlay}
                 onSpeed={setSpeed}
             />
-            {tip && (
-                <div
-                    className="pointer-events-none absolute z-10 max-w-xs border border-line bg-bg px-2 py-1.5 text-xs"
-                    style={{ left: tip.x + 12, top: tip.y + 12 }}
-                >
-                    <div className="text-fg">{tip.title}</div>
-                    {tip.lines.map((line) => (
-                        <div key={line} className="text-muted">
-                            {line}
-                        </div>
-                    ))}
-                </div>
-            )}
-            </div>
-            <EventList events={bundle.timeline} time={time} timeZone={bundle.manifest.timezone} onSelect={showEvent} />
         </div>
     );
 }
