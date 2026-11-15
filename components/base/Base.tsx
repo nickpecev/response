@@ -27,14 +27,10 @@ function navHref(item: NavItem, activeIncidentId: string) {
     return item.href;
 }
 
+/** The logo is a dark-on-transparent PNG, used as a mask so it takes the surrounding text colour. */
 export function Mark({ className = "" }: { className?: string }) {
-    return (
-        <svg viewBox="0 0 20 20" className={className} aria-hidden>
-            <path d="M10 2.5 17.5 16.5H2.5Z" fill="none" stroke="currentColor" strokeWidth="1.6" />
-            <path d="M5.2 11.5h9.6" stroke="currentColor" strokeWidth="1.6" />
-            <rect x="8.6" y="13.2" width="2.8" height="2.8" className="fill-accent" />
-        </svg>
-    );
+    const mask = "url(/logo.png) center / contain no-repeat";
+    return <span aria-hidden className={`inline-block aspect-[319/283] bg-current ${className}`} style={{ mask, WebkitMask: mask }} />;
 }
 
 function Clock() {
@@ -71,7 +67,7 @@ export function Base({ children }: BaseProps) {
         <div className="flex h-dvh w-full flex-col overflow-hidden bg-bg text-fg">
             <header className="no-print flex h-11 shrink-0 items-stretch gap-6 border-b border-line bg-panel px-4">
                 <Link href="/" className="flex items-center gap-2 text-fg">
-                    <Mark className="h-4 w-4" />
+                    <Mark className="h-6" />
                     <span className="text-[14px] font-semibold tracking-[0.04em]">Aftermath</span>
                 </Link>
                 <nav className="flex items-stretch gap-1" aria-label="Main">
